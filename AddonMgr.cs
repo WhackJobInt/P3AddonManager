@@ -141,6 +141,72 @@ namespace P3AddonManager
                     index++;
                 }
             }
+
+            static bool FindConflict(string[] conf, string what)
+            {
+                for (int i = 0; i < conf.Length; i++)
+                {
+                    if (conf[i] == what)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            // Now then check for conflicts...
+            // kill me
+            for (int i = 0; i < addons.Length; i++)
+            {
+                for (int j = 0; j < addons.Length; j++)
+                {
+                    if (addons[i].name != addons[j].name)
+                    {
+                        for (int k = 0; k < addons[i].files.Length; k++)
+                        {
+                            for (int l = 0; l < addons[j].files.Length; l++)
+                            {
+                                if (addons[i].files[k] == addons[j].files[l])
+                                {
+                                    if (addons[i].files[k] == "ignore")
+                                    {
+                                        continue;
+                                    }
+
+                                    if (!FindConflict(addons[i].conflictFiles, addons[j].files[l]))
+                                    {
+                                        int confindex = addons[i].conflictFiles.Length + 1;
+                                        Array.Resize(ref addons[i].conflictFiles, confindex);
+                                        addons[i].conflictFiles[confindex - 1] = addons[j].files[l];
+                                    }
+
+                                    if (!FindConflict(addons[j].conflictFiles, addons[i].files[k]))
+                                    {
+                                        int confindex = addons[j].conflictFiles.Length + 1;
+                                        Array.Resize(ref addons[j].conflictFiles, confindex);
+                                        addons[j].conflictFiles[confindex - 1] = addons[i].files[k];
+                                    }
+
+                                    if (!FindConflict(addons[i].conflicts, addons[j].name))
+                                    {
+                                        int confindex = addons[i].conflicts.Length + 1;
+                                        Array.Resize(ref addons[i].conflicts, confindex);
+                                        addons[i].conflicts[confindex - 1] = addons[j].name;
+                                    }
+
+                                    if (!FindConflict(addons[j].conflicts, addons[i].name))
+                                    {
+                                        int confindex = addons[j].conflicts.Length + 1;
+                                        Array.Resize(ref addons[j].conflicts, confindex);
+                                        addons[j].conflicts[confindex - 1] = addons[i].name;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         // GetAddonFolder() + $"{addon.name}\\addoninfo.txt"

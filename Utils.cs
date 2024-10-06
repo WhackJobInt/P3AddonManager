@@ -345,7 +345,7 @@ namespace P3AddonManager
             }
         }
 
-        public static void OpenFile(string path, string arguments = null)
+        public static void OpenFile(string path, string arguments = "")
         {
             var process = new Process();
             process.StartInfo = new ProcessStartInfo()

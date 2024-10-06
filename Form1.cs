@@ -193,12 +193,15 @@ namespace P3AddonManager
             bool st = (addonListBox.GetItemChecked(addonListBox.SelectedIndex));
 
             Point point = addonListBox.PointToClient(new Point(e.X, e.Y));
-            int index = this.addonListBox.IndexFromPoint(point);
-            if (index < 0) index = this.addonListBox.Items.Count - 1;
-            object data = addonListBox.SelectedItem;
-            this.addonListBox.Items.Remove(data);
-            this.addonListBox.Items.Insert(index, data);
-
+            int index = addonListBox.IndexFromPoint(point);
+            if (index < 0) index = addonListBox.Items.Count - 1;
+            object? data = addonListBox.SelectedItem;
+            if (data != null)
+            {
+                addonListBox.Items.Remove(data);
+                addonListBox.Items.Insert(index, data);
+            }
+            
             if (addonListBox.GetItemChecked(index) != st)
             {
                 addonListBox.SetItemChecked(index, st);
@@ -320,9 +323,53 @@ namespace P3AddonManager
             containsListBox.SetItemChecked((int)AddonContains.scripts, addon.has.script);
             containsListBox.SetItemChecked((int)AddonContains.shaders, addon.has.shader);
             containsListBox.SetItemChecked((int)AddonContains.sound, addon.has.sound);
+
+            if (addon.vpkV1)
+            {
+                containsListBox.Items.Remove(containsListBox.Items[(int)AddonContains.vpk]);
+                containsListBox.Items.Insert((int)AddonContains.vpk, "VPK (v1)");
+            }
+            else if (addon.vpkV2)
+            {
+                containsListBox.Items.Remove(containsListBox.Items[(int)AddonContains.vpk]);
+                containsListBox.Items.Insert((int)AddonContains.vpk, "VPK (v2)");
+            }
             containsListBox.SetItemChecked((int)AddonContains.vpk, addon.has.vpk);
+
             containsListBox.SetItemChecked((int)AddonContains.p3s, addon.has.p3s);
             containsListBox.SetItemChecked((int)AddonContains.ans, addon.has.ans);
+
+            string conflicts = "Conflicts: ";
+            if (addon.conflicts.Length <= 0)
+            {
+                conflictTextBox.ForeColor = Color.ForestGreen;
+                conflicts += "n/a";
+
+                toolTipConflict.SetToolTip(conflictTextBox, "");
+            }
+            else
+            {
+                string conflictFiles = "";
+                for (int i = 0; i < addon.conflictFiles.Length; i++)
+                {
+                    conflictFiles += $"{addon.conflictFiles[i]}\n";
+                }
+
+                toolTipConflict.SetToolTip(conflictTextBox, conflictFiles);
+
+                conflictTextBox.ForeColor = Color.Olive;
+            }
+
+            for (int i = 0; i < addon.conflicts.Length; i++)
+            {
+                conflicts += $"\"{addon.conflicts[i]}\"";
+                if (i+1 < addon.conflicts.Length)
+                {
+                    conflicts += ", ";
+                }
+            }
+
+            conflictTextBox.Text = conflicts;
 
             saveButton.Enabled = true;
 
