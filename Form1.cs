@@ -1,5 +1,6 @@
 using Gameloop.Vdf;
 using Gameloop.Vdf.Linq;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -201,7 +202,7 @@ namespace P3AddonManager
                 addonListBox.Items.Remove(data);
                 addonListBox.Items.Insert(index, data);
             }
-            
+
             if (addonListBox.GetItemChecked(index) != st)
             {
                 addonListBox.SetItemChecked(index, st);
@@ -327,13 +328,30 @@ namespace P3AddonManager
             if (addon.vpkV1)
             {
                 containsListBox.Items.Remove(containsListBox.Items[(int)AddonContains.vpk]);
-                containsListBox.Items.Insert((int)AddonContains.vpk, "VPK (v1)");
+                containsListBox.Items.Insert((int)AddonContains.vpk, "VPK (V1)");
             }
             else if (addon.vpkV2)
             {
                 containsListBox.Items.Remove(containsListBox.Items[(int)AddonContains.vpk]);
-                containsListBox.Items.Insert((int)AddonContains.vpk, "VPK (v2)");
+                containsListBox.Items.Insert((int)AddonContains.vpk, "VPK (V2)");
+
+                string msg = "Postal III doesn't support VPK V2!";
+                string caption = "VPK V2 Detected";
+
+                MessageBox.Show(msg, caption, MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+
+            if (addon.vpkV1 && addon.vpkV2)
+            {
+                containsListBox.Items.Remove(containsListBox.Items[(int)AddonContains.vpk]);
+                containsListBox.Items.Insert((int)AddonContains.vpk, "VPK (V1+V2)");
+
+                string msg = "Postal III doesn't support VPK V2!";
+                string caption = "VPK V2 Detected";
+
+                MessageBox.Show(msg, caption, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+
             containsListBox.SetItemChecked((int)AddonContains.vpk, addon.has.vpk);
 
             containsListBox.SetItemChecked((int)AddonContains.p3s, addon.has.p3s);
@@ -363,7 +381,7 @@ namespace P3AddonManager
             for (int i = 0; i < addon.conflicts.Length; i++)
             {
                 conflicts += $"\"{addon.conflicts[i]}\"";
-                if (i+1 < addon.conflicts.Length)
+                if (i + 1 < addon.conflicts.Length)
                 {
                     conflicts += ", ";
                 }
@@ -528,9 +546,260 @@ namespace P3AddonManager
             }
         }
 
-        private void installButton_Click(object sender, EventArgs e)
+        bool IsValidVPK(string path)
         {
+            string pattern = @"^[a-zA-Z0-9._\\\-:/\s]+$";
 
+            string[] files = Directory.GetFiles(path, "*.*", SearchOption.AllDirectories);
+
+            string[] invalid = new string[] { };
+
+            //string invalid = "";
+            //int vtx = 0;
+            for (int i = 0; i < files.Length; i++)
+            {
+                string str = files[i].Replace(path, "");
+                if (!Regex.IsMatch(str, pattern))
+                {
+                    invalid = invalid.Append<string>(str).ToArray();
+                    //invalid = invalid + $"{str}\n";
+                    //Console.WriteLine(files[i].Replace(path, ""));
+                }
+                else
+                {
+                    // L4D1 vpk is being an asshole
+                    //if (str.EndsWith("dx80.vtx") || str.EndsWith("dx90.vtx") || str.EndsWith("sw.vtx"))
+                    {
+                        //invalid = invalid.Append<string>(str).ToArray();
+                        //vtx++;
+                    }
+                }
+            }
+
+            if (invalid.Length > 0)
+            {
+                // anymore than this and I'll have a heartattack
+                if (invalid.Length < 75)
+                {
+                    string messageFiles = "";
+                    for (int i = 0; i < invalid.Length; i++)
+                    {
+                        messageFiles = messageFiles + invalid[i];
+                    }
+
+                    MessageBox.Show($"These files will crash vpk.exe:\n\n{messageFiles}");
+
+                    return false;
+                }
+                else
+                {
+                    StreamWriter file = File.CreateText("p3_addonmgr_log.txt");
+                    file.WriteLine($"{path}\n");
+                    for (int i = 0; i < invalid.Length; i++)
+                    {
+                        file.WriteLine(invalid[i]);
+                    }
+                    file.Close();
+                    MessageBox.Show($"These files will crash vpk.exe:\n\nFound \"{invalid.Length}\" files");
+                    Utils.OpenFile("p3_addonmgr_log.txt");
+
+                    return false;
+                }
+            }
+            else
+                MessageBox.Show($"The folder seems VPK-friendly.");
+
+            return true;
+        }
+
+        private void vpkValidButton_Click(object sender, EventArgs e)
+        {
+            FolderBrowserDialog folderDlg = new()
+            {
+                ShowNewFolderButton = false
+            };
+
+            DialogResult result = folderDlg.ShowDialog();
+            if (result != DialogResult.OK)
+            {
+                return;
+            }
+
+            IsValidVPK(folderDlg.SelectedPath);
+        }
+
+        static string vpk_pakName = "pak01";
+
+        private void buildVPKFolderMultiButton_Click()
+        {
+            FolderBrowserDialog folderDlg = new()
+            {
+                ShowNewFolderButton = false
+            };
+
+            DialogResult result = folderDlg.ShowDialog();
+            if (result != DialogResult.OK)
+            {
+                return;
+            }
+
+            if (!IsValidVPK(folderDlg.SelectedPath))
+            {
+                MessageBox.Show("Building VPK (multi) aborted.");
+                return;
+            }
+
+            // Folders to look for and pack into the pak01 vpk set.
+            string[] targetFolders = { "materials", "models", "resource", "media", "particles", "scripts", "maps", "expressions", "scenes", "sound" };
+
+            // File types to look for in the aforementioned folders.
+            string[] fileTypes = { "vmt", "vtf", "mdl", "phy", "vtx", "vvd", "ani", "pcf", "vcd", "txt", "res", "vfont", "cur", "dat", "bik", "mov", "bsp", "nav", "lst", "lmp", "vfe", "wav", "mp3" };
+
+            // Script begins
+            string currentDirectory = Directory.GetCurrentDirectory();
+
+            // Path to vpk.exe
+            string vpkPath = currentDirectory + "\\" + "p3_addonmgr\\vpk.exe";
+
+            if (!File.Exists(vpkPath))
+            {
+                MessageBox.Show("p3_addonmgr/vpk.exe not found.\n\nBuilding VPK (multi) aborted.");
+                return;
+            }
+
+            string responsePath = folderDlg.SelectedPath + "\\" + "vpk_list.txt";
+
+            string msg = "Building the VPK begins now.\nThe program will appear frozen, do not close it until it shows \"Done.\".\n\nPress OK to continue.";
+            string caption = "Building VPK V1 (multi)";
+
+            MessageBox.Show(msg, caption, MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+            using (StreamWriter outFile = new StreamWriter(responsePath))
+            {
+                foreach (string folder in targetFolders)
+                {
+                    string targetFolderPath = Path.Combine(folderDlg.SelectedPath, folder);
+
+                    Console.WriteLine(targetFolderPath);
+
+                    if (Directory.Exists(targetFolderPath))
+                    {
+                        // Recursively get all files in the folder and subfolders
+                        foreach (string file in Directory.EnumerateFiles(targetFolderPath, "*.*", SearchOption.AllDirectories))
+                        {
+                            // Get file extension
+                            string extension = Path.GetExtension(file).TrimStart('.').ToLower();
+
+                            // Check if the file extension matches one of the desired types
+                            if (fileTypes.Contains(extension))
+                            {
+                                string relativePath = file.Substring(folderDlg.SelectedPath.Length + 1).Replace("/", "\\");
+                                outFile.WriteLine(relativePath);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // The "pak01" here specifies the multi-chunk vpk names.
+            ProcessStartInfo startInfo = new ProcessStartInfo
+            {
+                FileName = vpkPath,
+                Arguments = $"-M a {vpk_pakName} @" + $"\"{responsePath}\"",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                WorkingDirectory = folderDlg.SelectedPath
+            };
+
+            Process process = new Process
+            {
+                StartInfo = startInfo
+            };
+
+            process.Start();
+            process.WaitForExit();
+
+            MessageBox.Show("Done.\nYou can find the VPKs inside the chosen directory.");
+        }
+
+        private void buildVPKFolderMultiButton_MouseUp(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                buildVPKFolderMultiButton_Click();
+            }
+            else if (e.Button == MouseButtons.Right)
+            {
+                using (Prompt prompt = new Prompt($"Current: \"{vpk_pakName}\"", "Enter new name"))
+                {
+                    if (prompt.Result.Length > 0)
+                    {
+                        vpk_pakName = prompt.Result;
+
+                        toolTip.SetToolTip(buildVPKFolderMultiButton, $"Builds a multi-pak VPK ({vpk_pakName}_dir)\n\nRight Click to change the name of the VPK");
+                    }
+                }
+            }
+
+        }
+
+        private void buildVPKFolderButton_Click(object sender, EventArgs e)
+        {
+            FolderBrowserDialog folderDlg = new()
+            {
+                ShowNewFolderButton = false
+            };
+
+            DialogResult result = folderDlg.ShowDialog();
+            if (result != DialogResult.OK)
+            {
+                return;
+            }
+
+            if (!IsValidVPK(folderDlg.SelectedPath))
+            {
+                MessageBox.Show("Building VPK (single) aborted.");
+                return;
+            }
+
+            // Script begins
+            string currentDirectory = Directory.GetCurrentDirectory();
+
+            // Path to vpk.exe
+            string vpkPath = currentDirectory + "\\" + "p3_addonmgr\\vpk.exe";
+
+            if (!File.Exists(vpkPath))
+            {
+                MessageBox.Show("p3_addonmgr/vpk.exe not found.\n\nBuilding VPK (single) aborted.");
+                return;
+            }
+
+            string msg = "Building the VPK begins now.\nThe program will appear frozen, do not close it until it shows \"Done.\".\n\nPress OK to continue.";
+            string caption = "Building VPK V1 (single)";
+
+            MessageBox.Show(msg, caption, MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+            // The "pak01" here specifies the multi-chunk vpk names.
+            ProcessStartInfo startInfo = new ProcessStartInfo
+            {
+                FileName = vpkPath,
+                Arguments = $"\"{folderDlg.SelectedPath}\"",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                WorkingDirectory = folderDlg.SelectedPath
+            };
+
+            Process process = new Process
+            {
+                StartInfo = startInfo
+            };
+
+            process.Start();
+            process.WaitForExit();
+
+            MessageBox.Show("Done.\nYou can find the VPK outside of the chosen directory.");
         }
     }
 }

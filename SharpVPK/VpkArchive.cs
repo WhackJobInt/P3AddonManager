@@ -46,7 +46,7 @@ namespace SharpVPK
                         hdr = _reader.ReadArchiveHeader();
                         if (!hdr.Verify())
                         {
-                            throw new ArchiveParsingException($"Invalid VPK: {filename}");
+                            throw new ArchiveParsingException($"Invalid VPK:\n\n{filename}\n\nRemove or rename this VPK, then reload the program.");
                         }
                     }
                 }
@@ -55,7 +55,7 @@ namespace SharpVPK
             }
             catch (Exception e)
             {
-                MessageBox.Show($"Invalid VPK:\n\n{filename}");
+                MessageBox.Show($"Invalid VPK:\n\n{filename}\n\nRemove or rename this VPK, then reload the program.");
                 throw;
             }
         }
