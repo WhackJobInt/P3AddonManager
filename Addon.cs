@@ -134,7 +134,7 @@ namespace P3AddonManager
                     filesTemp[i] = "ignore";
                 }
 
-                Console.WriteLine(filesTemp[i]);
+                //Console.WriteLine(filesTemp[i]);
             }
 
             if (has.vpk)

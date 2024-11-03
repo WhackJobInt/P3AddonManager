@@ -103,6 +103,10 @@ namespace P3AddonManager
 
             // Will only force reload if it finds a completely new directory
             FindUnusedFolders();
+
+            string GameVer = $"The currently detected version of your Postal III installation.\r\n\r\nRed = Addons will not work for this Postal III\r\nOlive = Addons might or not work, make sure you have ZOOM or Ultrapatch\r\nGreen = Addons will work\n\nC:{P3Hash.Current_Client}\nS:{P3Hash.Current_Server}\nE:{P3Hash.Current_Exe}";
+
+            toolTip.SetToolTip(gameVersionLabel, GameVer);
         }
 
         public Form1()
@@ -147,7 +151,11 @@ namespace P3AddonManager
 
             // If this doesn't exist for some reason, then it'll always be p3
             if (ini.KeyExists("Game", "Main"))
+            {
                 Utils.GameFolder = ini.Read("Game", "Main");
+                //Utils.RootFolder = ini.Read("Path", "Main");
+            }
+
 
             Utils.SetExePath(ini.Read("Path", "Main"));
 
@@ -187,14 +195,10 @@ namespace P3AddonManager
             e.Effect = DragDropEffects.Move;
         }
 
-        private void addonListBox_DragDrop(object sender, DragEventArgs e)
+        void RearrangeAddonList(int index)
         {
-            if (!addonListBox.AllowDrop) return;
-
             bool st = (addonListBox.GetItemChecked(addonListBox.SelectedIndex));
 
-            Point point = addonListBox.PointToClient(new Point(e.X, e.Y));
-            int index = addonListBox.IndexFromPoint(point);
             if (index < 0) index = addonListBox.Items.Count - 1;
             object? data = addonListBox.SelectedItem;
             if (data != null)
@@ -226,6 +230,16 @@ namespace P3AddonManager
 
             // Start filling entries...
             UpdateUI();
+        }
+
+        private void addonListBox_DragDrop(object sender, DragEventArgs e)
+        {
+            if (!addonListBox.AllowDrop) return;
+
+            Point point = addonListBox.PointToClient(new Point(e.X, e.Y));
+            int index = addonListBox.IndexFromPoint(point);
+
+            RearrangeAddonList(index);
         }
 
         private void UpdateUI(int index = -1)
@@ -310,7 +324,7 @@ namespace P3AddonManager
                 addonPictureBox.Image = addonPictureBox.InitialImage;
             }
 
-            minimumVersionDisplayLabel.Text = $"{addon.info.Minimum} {addon.info.MinimumVer}";
+            minimumVersionDisplayLabel.Text = $"{addon.info.Minimum}";
 
             Utils.ConvertVersionToLabel(minimumVersionDisplayLabel, addon);
 
@@ -680,7 +694,7 @@ namespace P3AddonManager
                 {
                     string targetFolderPath = Path.Combine(folderDlg.SelectedPath, folder);
 
-                    Console.WriteLine(targetFolderPath);
+                    //Console.WriteLine(targetFolderPath);
 
                     if (Directory.Exists(targetFolderPath))
                     {
@@ -800,6 +814,30 @@ namespace P3AddonManager
             process.WaitForExit();
 
             MessageBox.Show("Done.\nYou can find the VPK outside of the chosen directory.");
+        }
+
+        private void upArrowButton_Click(object sender, EventArgs e)
+        {
+            int index = addonListBox.SelectedIndex;
+
+            if (index != 0)
+            {
+                index--;
+            }
+
+            RearrangeAddonList(index);
+        }
+
+        private void downArrowButton_Click(object sender, EventArgs e)
+        {
+            int index = addonListBox.SelectedIndex;
+
+            if (index != addonListBox.Items.Count -1)
+            {
+                index++;
+            }
+
+            RearrangeAddonList(index);
         }
     }
 }

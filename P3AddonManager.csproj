@@ -8,7 +8,7 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-    <ApplicationIcon>addonmgr.ico</ApplicationIcon>
+    <ApplicationIcon>Icon1.ico</ApplicationIcon>
     <PlatformTarget>x86</PlatformTarget>
     <Title>Postal III Addon Manager</Title>
     <Company>WhackJob Interactive</Company>
@@ -27,7 +27,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="addonmgr.ico" />
+    <Compile Remove="SharpVPK\Properties\**" />
+    <EmbeddedResource Remove="SharpVPK\Properties\**" />
+    <None Remove="SharpVPK\Properties\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Icon1.ico" />
   </ItemGroup>
 
   <ItemGroup>

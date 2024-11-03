@@ -108,12 +108,12 @@ namespace P3AddonManager
                 {
                     // Example format: "key" "value"
                     var parts = trimmedLine.Split(new[] { '\"' }, StringSplitOptions.RemoveEmptyEntries);
-                    Console.WriteLine($"{parts.Length}\n");
+                    //Console.WriteLine($"{parts.Length}\n");
                     if (parts.Length == 3)
                     {
                         string key = parts[0].Trim();
                         string value = parts[2].Trim();
-                        Console.WriteLine($"{key} {value}\n");
+                        //Console.WriteLine($"{key} {value}\n");
 
                         addonList.Add(key, value);
                     }
@@ -124,7 +124,7 @@ namespace P3AddonManager
             int index = 0;
             foreach (var pair in addonList)
             {
-                Console.WriteLine($"Key: {pair.Key}, Value: {pair.Value}");
+                //Console.WriteLine($"Key: {pair.Key}, Value: {pair.Value}");
 
                 bool enabled = false;
                 if (pair.Value == "1")
@@ -244,7 +244,6 @@ namespace P3AddonManager
             fileContent = Regex.Replace(fileContent, "postal3script", "postal3script", RegexOptions.IgnoreCase);
             fileContent = Regex.Replace(fileContent, "angelscript", "angelscript", RegexOptions.IgnoreCase);
             fileContent = Regex.Replace(fileContent, "addonminimum", "addonminimum", RegexOptions.IgnoreCase);
-            fileContent = Regex.Replace(fileContent, "addonminimumver", "addonminimumver", RegexOptions.IgnoreCase);
 
             dynamic volvo = VdfConvert.Deserialize(fileContent);
 
@@ -270,13 +269,10 @@ namespace P3AddonManager
             addon.info.Postal3Script = Convert.ToString(volvo.Value.postal3script);
             addon.info.AngelScript = Convert.ToString(volvo.Value.angelscript);
             addon.info.Minimum = Convert.ToString(volvo.Value.addonminimum);
-            addon.info.MinimumVer = Convert.ToString(volvo.Value.addonminimumver);
 
             // Fallback
             if (addon.info.Minimum == null || addon.info.Minimum.Length <= 0)
                 addon.info.Minimum = "zoom";
-            if (addon.info.MinimumVer == null || addon.info.MinimumVer.Length <= 0)
-                addon.info.MinimumVer = "all";
 
             // Check if it's ZOOM, Ultrapatch or Angel..
             addon.info.CheckMinimum();

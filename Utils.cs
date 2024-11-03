@@ -64,15 +64,15 @@ namespace P3AddonManager
 
         public static void DetermineInstallation(Label gameVersionLabel)
         {
-            P3Hash.Current_Client = P3Hash.GenerateMD5(GetExePath() + $"{GetGameFolder()}\\bin\\client.dll");
-            P3Hash.Current_Server = P3Hash.GenerateMD5(GetExePath() + $"{GetGameFolder()}\\bin\\server.dll");
-            P3Hash.Current_Exe = P3Hash.GenerateMD5(GetExePath() + "p3.exe");
+            P3Hash.Current_Client = P3Hash.GenerateMD5($"{GetGameFolder()}\\bin\\client.dll");
+            P3Hash.Current_Server = P3Hash.GenerateMD5($"{GetGameFolder()}\\bin\\server.dll");
+            P3Hash.Current_Exe = P3Hash.GenerateMD5($"{GetExePath()}\\p3.exe");
 
             P3Hash.Current_Client = P3Hash.Current_Client.ToUpper();
             P3Hash.Current_Server = P3Hash.Current_Server.ToUpper();
             P3Hash.Current_Exe = P3Hash.Current_Exe.ToUpper();
 
-            Console.WriteLine(P3Hash.Current_Client);
+            //Console.WriteLine(P3Hash.Current_Client);
 
             if (CheckZOOM())
             {
@@ -105,6 +105,12 @@ namespace P3AddonManager
                         break;
                     }
                 }
+
+                if (CurrentGameVersion == P3Hash.P3Version.Angelv1_1_0)
+                {
+                    ULTRAPATCH = true;
+                    ANGEL = true;
+                }
             }
 
             if (CheckUNSUPPORTED())
@@ -121,13 +127,16 @@ namespace P3AddonManager
                 gameVersionLabel.Text = $"Detected Version: WTF?";
             }
 
+            // Weird version of P3 or someone uses our VPK stuff
+            if (IsUNKNOWN() && GetGameVersion() == P3Hash.P3Version.Unknown)
+            {
+                gameVersionLabel.ForeColor = cUNKNOWN;
+                return;
+            }
+
             if (IsUNSUPPORTED())
             {
                 gameVersionLabel.ForeColor = cUNSUPPORTED;
-            }
-            else if (IsUNKNOWN())
-            {
-                gameVersionLabel.ForeColor = cUNKNOWN;
             }
             else
             {
@@ -188,11 +197,15 @@ namespace P3AddonManager
             // It's all good, but you never know if latest version broke something
             if (label.ForeColor == cPASS)
             {
-                if (addon.info.MinimumVer != "all")
+                // Check for Angel version inside addon
+                if (IsULTRAPATCH() && IsANGEL())
                 {
-                    if (addon.info.MinimumVer != GetGameVersion().ToString().ToLower())
+                    if (addon.info.bANGEL)
                     {
-                        label.ForeColor = cUNSUPPORTED;
+                        if (addon.info.GameVersion != GetGameVersion())
+                        {
+                            label.ForeColor = cUNSUPPORTED;
+                        }
                     }
                 }
             }

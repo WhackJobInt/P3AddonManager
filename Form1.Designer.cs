@@ -56,6 +56,8 @@
             toolTip = new ToolTip(components);
             toolTipConflict = new ToolTip(components);
             expertGroupBox = new GroupBox();
+            upArrowButton = new Button();
+            downArrowButton = new Button();
             addonBox.SuspendLayout();
             selectedAddonGroupBox.SuspendLayout();
             descriptionGroupBox.SuspendLayout();
@@ -75,7 +77,7 @@
             addonBox.TabIndex = 0;
             addonBox.TabStop = false;
             addonBox.Text = "Addons (p3)";
-            toolTip.SetToolTip(addonBox, "The addons loaded from addonlist.txt\r\n\r\nPress and hold down the Right Mouse button to drag addons to change their load order.");
+            toolTip.SetToolTip(addonBox, "The addons loaded from addonlist.txt\r\n\r\nPress and hold down the Right Mouse button to drag addons to change their load order.\r\nUse the Up and Down buttons to the right to change their load order.");
             // 
             // addonListBox
             // 
@@ -111,7 +113,7 @@
             // 
             // conflictTextBox
             // 
-            conflictTextBox.BackColor = Color.White;
+            conflictTextBox.BackColor = Color.WhiteSmoke;
             conflictTextBox.BorderStyle = BorderStyle.FixedSingle;
             conflictTextBox.ForeColor = Color.ForestGreen;
             conflictTextBox.Location = new Point(6, 279);
@@ -177,7 +179,7 @@
             minimumVersionDisplayLabel.Size = new Size(27, 17);
             minimumVersionDisplayLabel.TabIndex = 7;
             minimumVersionDisplayLabel.Text = "n/a";
-            toolTip.SetToolTip(minimumVersionDisplayLabel, "The minimum version required to run this addon properly.\r\n\r\nRed = Addon will not work\r\nOlive = Addon might or not work\r\nGreen = Addon will work");
+            toolTip.SetToolTip(minimumVersionDisplayLabel, "The minimum version required to run this addon properly.\r\n\r\nRed = Addon will not work\r\nOlive = Addon might or not work\r\nGreen = Addon will work\r\n\r\nCheck console for errors if using Ultrapatch Angel");
             // 
             // addonPictureBox
             // 
@@ -185,6 +187,7 @@
             addonPictureBox.Location = new Point(6, 35);
             addonPictureBox.Name = "addonPictureBox";
             addonPictureBox.Size = new Size(320, 240);
+            addonPictureBox.SizeMode = PictureBoxSizeMode.StretchImage;
             addonPictureBox.TabIndex = 5;
             addonPictureBox.TabStop = false;
             // 
@@ -225,7 +228,7 @@
             // saveButton
             // 
             saveButton.Enabled = false;
-            saveButton.Location = new Point(117, 114);
+            saveButton.Location = new Point(138, 114);
             saveButton.Name = "saveButton";
             saveButton.Size = new Size(77, 32);
             saveButton.TabIndex = 3;
@@ -243,7 +246,7 @@
             actionGroupBox.Controls.Add(saveButton);
             actionGroupBox.Location = new Point(490, 413);
             actionGroupBox.Name = "actionGroupBox";
-            actionGroupBox.Size = new Size(200, 157);
+            actionGroupBox.Size = new Size(222, 157);
             actionGroupBox.TabIndex = 4;
             actionGroupBox.TabStop = false;
             actionGroupBox.Text = "Main";
@@ -252,7 +255,7 @@
             // 
             addonInfoButton.Location = new Point(6, 60);
             addonInfoButton.Name = "addonInfoButton";
-            addonInfoButton.Size = new Size(188, 23);
+            addonInfoButton.Size = new Size(209, 23);
             addonInfoButton.TabIndex = 9;
             addonInfoButton.Text = "Open addoninfo.txt";
             toolTip.SetToolTip(addonInfoButton, "Opens current selected addon's addoninfo.txt in a text editor.");
@@ -263,7 +266,7 @@
             // 
             addonFolderButton.Location = new Point(6, 19);
             addonFolderButton.Name = "addonFolderButton";
-            addonFolderButton.Size = new Size(188, 37);
+            addonFolderButton.Size = new Size(209, 37);
             addonFolderButton.TabIndex = 8;
             addonFolderButton.Text = "Open addons Folder";
             toolTip.SetToolTip(addonFolderButton, "Opens the addons folder in explorer.");
@@ -274,7 +277,7 @@
             // 
             addonListButton.Location = new Point(6, 87);
             addonListButton.Name = "addonListButton";
-            addonListButton.Size = new Size(188, 23);
+            addonListButton.Size = new Size(209, 23);
             addonListButton.TabIndex = 6;
             addonListButton.Text = "Open addonlist.txt";
             toolTip.SetToolTip(addonListButton, "Opens the addonlist.txt in a text editor.");
@@ -296,7 +299,7 @@
             // 
             buildVPKFolderMultiButton.Location = new Point(6, 78);
             buildVPKFolderMultiButton.Name = "buildVPKFolderMultiButton";
-            buildVPKFolderMultiButton.Size = new Size(186, 23);
+            buildVPKFolderMultiButton.Size = new Size(209, 23);
             buildVPKFolderMultiButton.TabIndex = 11;
             buildVPKFolderMultiButton.Text = "Build VPK from Folder (Multi)";
             toolTip.SetToolTip(buildVPKFolderMultiButton, "Builds a multi-pak VPK (pak01_dir)\r\n\r\nRight Click to change the name of the pak");
@@ -307,7 +310,7 @@
             // 
             buildVPKFolderButton.Location = new Point(6, 49);
             buildVPKFolderButton.Name = "buildVPKFolderButton";
-            buildVPKFolderButton.Size = new Size(186, 23);
+            buildVPKFolderButton.Size = new Size(209, 23);
             buildVPKFolderButton.TabIndex = 11;
             buildVPKFolderButton.Text = "Build VPK from Folder (Single)";
             toolTip.SetToolTip(buildVPKFolderButton, "Builds a single VPK file (ex.: myaddonname.vpk)\r\n\r\nMake sure the directory does not exceed 200mb.\r\n\r\nMainly used for .nav files which cannot be\r\noutside of VPK.");
@@ -318,7 +321,7 @@
             // 
             vpkValidButton.Location = new Point(6, 21);
             vpkValidButton.Name = "vpkValidButton";
-            vpkValidButton.Size = new Size(186, 23);
+            vpkValidButton.Size = new Size(210, 23);
             vpkValidButton.TabIndex = 10;
             vpkValidButton.Text = "VPK Valid Checking (Folder)";
             toolTip.SetToolTip(vpkValidButton, "Checks if a specified folder contains any file \r\nthat has illegal (unicode) character, which would crash vpk.exe");
@@ -360,16 +363,41 @@
             expertGroupBox.Controls.Add(buildVPKFolderButton);
             expertGroupBox.Location = new Point(490, 576);
             expertGroupBox.Name = "expertGroupBox";
-            expertGroupBox.Size = new Size(198, 113);
+            expertGroupBox.Size = new Size(222, 113);
             expertGroupBox.TabIndex = 6;
             expertGroupBox.TabStop = false;
             expertGroupBox.Text = "Tools";
+            // 
+            // upArrowButton
+            // 
+            upArrowButton.FlatAppearance.BorderSize = 10;
+            upArrowButton.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
+            upArrowButton.Location = new Point(691, 48);
+            upArrowButton.Name = "upArrowButton";
+            upArrowButton.Size = new Size(25, 23);
+            upArrowButton.TabIndex = 7;
+            upArrowButton.Text = "🠅";
+            upArrowButton.UseVisualStyleBackColor = true;
+            upArrowButton.Click += upArrowButton_Click;
+            // 
+            // downArrowButton
+            // 
+            downArrowButton.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
+            downArrowButton.Location = new Point(691, 71);
+            downArrowButton.Name = "downArrowButton";
+            downArrowButton.Size = new Size(25, 23);
+            downArrowButton.TabIndex = 7;
+            downArrowButton.Text = "🠇";
+            downArrowButton.UseVisualStyleBackColor = true;
+            downArrowButton.Click += downArrowButton_Click;
             // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(698, 701);
+            ClientSize = new Size(717, 701);
+            Controls.Add(downArrowButton);
+            Controls.Add(upArrowButton);
             Controls.Add(expertGroupBox);
             Controls.Add(gameVersionLabel);
             Controls.Add(actionGroupBox);
@@ -422,5 +450,7 @@
         private Button buildVPKFolderMultiButton;
         private Button buildVPKFolderButton;
         private GroupBox expertGroupBox;
+        private Button upArrowButton;
+        private Button downArrowButton;
     }
 }

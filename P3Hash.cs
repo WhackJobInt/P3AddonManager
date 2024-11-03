@@ -40,6 +40,7 @@ namespace P3AddonManager
 
             ZOOM,
 
+            Angelv1_1_0,
 
             MAX
         };
@@ -73,6 +74,11 @@ namespace P3AddonManager
             // -------------------------------------------------------------
 
             "0161E9B092072207340FCB2EA53D55C2", // Steam ZOOM (<=1.4)
+
+            "ED76F38806C2F8E32F47445BC4250D0B", // Ultrapatch Angel v1.1.0
+
+
+            ""
         };
         public static string[] P3_Servers =
         {
@@ -102,6 +108,11 @@ namespace P3AddonManager
             // -------------------------------------------------------------
 
             "EDDA2FC0765C13E40F2570973D39C953", // Steam ZOOM (<=1.4)
+
+            "4E7064C7EB575483BB71DF010BA11344", // Ultrapatch Angel v1.1.0
+
+
+            ""
 
 
         };
@@ -134,6 +145,11 @@ namespace P3AddonManager
             // -------------------------------------------------------------
 
             "2AA403F58D03448B1AB973621BD2CA78", // Steam ZOOM (<=1.4)
+
+            "D99738300AAB14306DA0BBABD12949EA", // Ultrapatch Angel v1.1.0
+
+
+            ""
         };
 
         public static string GenerateMD5(string filePath)

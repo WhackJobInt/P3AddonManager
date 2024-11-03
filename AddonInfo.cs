@@ -20,60 +20,84 @@ namespace P3AddonManager
             Postal3Script = "null";
             AngelScript = "null";
             Minimum = "null";
-            MinimumVer = "null";
+
+            GameVersion = P3Hash.P3Version.Unknown;
         }
         public void CheckMinimum()
         {
+            bool bUnknown = true;
+
             // ZOOM addon (example)
-            if (Minimum == null && MinimumVer == null)
+            if (Minimum == null)
             {
                 Minimum = "ZOOM";
                 bZOOM = true;
-
-                bIGNOREVER = true;
-                MinimumVer = "(ALL)";
+                GameVersion = P3Hash.P3Version.ZOOM;
                 return;
             }
 
             // oh god, oh fuck
             string ver = Minimum.ToLower();
 
-            string vermin = MinimumVer.ToLower();
-
             if (ver.Contains("zoom"))
             {
                 Minimum = "ZOOM";
                 bZOOM = true;
-
-                if (vermin.Contains("all") || vermin.Length < 1)
-                {
-                    bIGNOREVER = true;
-                    MinimumVer = "(ALL)";
-                }
+                bUnknown = false;
+                GameVersion = P3Hash.P3Version.ZOOM;
             }
             else
             {
-                // Ultrapatch and Angel can't have ALL since they never had modloader from the beginning
+                // TODO: Simplify this for future releases
+                // ex.: Angelv1.2.0 mods will not work with Angelv1.1.0
 
                 if (ver.Contains("ultrapatch") || ver.Contains("up"))
                 {
                     Minimum = "Ultrapatch";
                     bULTRAPATCH = true;
-                    bANGEL = true;
+                    bUnknown = false;
+
+                    // TODO: Initial version of Ultrapatch with Addon support
+                    GameVersion = P3Hash.P3Version.Ultrapatchv1_0_0;
                 }
 
+                // Angel is much more strict about versions
                 if (ver.Contains("angel"))
                 {
-                    Minimum = "UP+Angel";
+                    Minimum = "Ultrapatch Angel";
                     bANGEL = true;
+                    bULTRAPATCH = true;
+
+                    bUnknown = false;
+
+                    // Initial release of Angel with Addon support
+                    GameVersion = P3Hash.P3Version.Angelv1_1_0;
+
+                    // TODO: there's gotta be a better way to handle this...
+                    if (ver.Contains("angelv"))
+                    {
+                        if (ver.EndsWith("1.1.0") || ver.EndsWith("1_1_0"))
+                        {
+                            GameVersion = P3Hash.P3Version.Angelv1_1_0;
+                        }
+                        else if (ver.EndsWith("1.2.0") || ver.EndsWith("1_2_0"))
+                        {
+                            //
+                        }
+                    }
                 }
+            }
+
+            if (bUnknown)
+            {
+                bUNKNOWN = true;
             }
         }
 
         public bool bZOOM = false;
         public bool bULTRAPATCH = false;
         public bool bANGEL = false;
-        public bool bIGNOREVER = false;
+        public bool bUNKNOWN = true;
 
         public string Title = new string("null");
         public string Author = new string("null");
@@ -83,6 +107,7 @@ namespace P3AddonManager
         public string Postal3Script = new string("null");
         public string AngelScript = new string("null");
         public string Minimum = new string("null");
-        public string MinimumVer = new string("null");
+
+        public P3Hash.P3Version GameVersion = P3Hash.P3Version.Unknown;
     }
 }
