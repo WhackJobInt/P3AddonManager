@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.DirectoryServices;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -30,6 +31,19 @@ namespace P3AddonManager
             }
 
             return addons[0];
+        }
+
+        public static Addon GetAddonByName(string name)
+        {
+            for (int i = 0; i < addons.Length; i++)
+            {
+                if (name == addons[i].name)
+                {
+                    return addons[i];
+                }
+            }
+
+            return null;
         }
 
         public static void AddAddon(Addon addon)
@@ -77,6 +91,15 @@ namespace P3AddonManager
 
         public static void ReadAddonList()
         {
+            if (!File.Exists(Utils.GetAddonList()))
+            {
+                string addonlist = "\"AddonList\"\n";
+                addonlist += "{\n";
+                addonlist += "}\n";
+
+                File.WriteAllText(Utils.GetAddonList(), addonlist);
+            }
+
             Addon[] newArr = new Addon[0];
 
             Dictionary<string, string> addonList = new Dictionary<string, string>();

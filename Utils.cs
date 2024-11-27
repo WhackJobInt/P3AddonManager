@@ -1,4 +1,5 @@
 ﻿using Gameloop.Vdf;
+using Gameloop.Vdf.Linq;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -39,8 +40,8 @@ namespace P3AddonManager
         static string? exePath;
         public static void SetExePath(string path) { exePath = path; }
         public static string GetExePath() { return exePath ?? ""; }
-        public static string GetAddonList() { return GetExePath() + "p3\\addonlist.txt"; }
-        public static string GetAddonFolder() { return GetExePath() + "p3\\addons\\"; }
+        public static string GetAddonList() { return GetExePath() + $"{GetGameFolder()}\\addonlist.txt"; }
+        public static string GetAddonFolder() { return GetExePath() + $"{GetGameFolder()}\\addons\\"; }
 
         public static string GameFolder = "p3";
 
@@ -226,7 +227,7 @@ namespace P3AddonManager
         static bool CheckSTEAM()
         {
             // pre-ZOOM Steam has this
-            if (File.Exists(GetExePath() + "givacyzo.dll") && 
+            if (File.Exists(GetExePath() + "givacyzo.dll") &&
                 File.Exists(GetExePath() + "givacyzo.x86"))
             {
                 if (P3Hash.Current_Client == P3Hash.P3_Clients[(int)P3Hash.P3Version.Steam] &&
@@ -245,7 +246,7 @@ namespace P3AddonManager
 
         static bool CheckRETAIL()
         {
-            if (File.Exists(GetExePath() + "asylygac.dll") && 
+            if (File.Exists(GetExePath() + "asylygac.dll") &&
                 File.Exists(GetExePath() + "asylygac.x86") &&
                 File.Exists(GetExePath() + "pcnsl.exe"))
             {
@@ -380,6 +381,12 @@ namespace P3AddonManager
                 UseShellExecute = true,
                 Verb = "open"
             });
+        }
+
+        public static void AddToVDF(VObject v, string key, string value)
+        {
+            VProperty temp = new VProperty(key, new VValue(value));
+            v.Insert(v.Count, temp);
         }
     }
 }

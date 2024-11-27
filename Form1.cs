@@ -9,6 +9,7 @@ using System.Timers;
 using System.Windows.Forms;
 using static P3AddonManager.Form1;
 using static System.Net.Mime.MediaTypeNames;
+using static System.Windows.Forms.Design.AxImporter;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.Window;
 
@@ -16,6 +17,8 @@ namespace P3AddonManager
 {
     public partial class Form1 : Form
     {
+        AddonEditorForm addonEditor = null;
+
         enum AddonContains
         {
             cfg,
@@ -26,7 +29,7 @@ namespace P3AddonManager
             particles,
             resource,
             scripts,
-            shaders,
+            //shaders,
             sound,
             vpk,
             p3s,
@@ -55,7 +58,7 @@ namespace P3AddonManager
                 }
 
                 ini.Write("Path", folderDlg.SelectedPath + "\\", "Main");
-                ini.Write("Game", folderDlg.SelectedPath + "\\p3", "Main");
+                ini.Write("Game", "p3", "Main");
                 return true;
             }
 
@@ -64,6 +67,28 @@ namespace P3AddonManager
 
         void Reload(bool newRun = true)
         {
+            addonPictureBox.Image = addonPictureBox.InitialImage;
+            conflictTextBox.Text = "Conflicts with: n/a";
+            conflictTextBox.ForeColor = Color.Olive;
+            addonLinkLabel.Text = "n/a";
+            minimumVersionDisplayLabel.Text = "n/a";
+            selectedAddonGroupBox.Text = "Selected Addon [UNKNOWN] (-1)";
+            descriptionTextBox.Text = "n/a";
+            statusLabel.Text = "[UNKNOWN]";
+            statusLabel.ForeColor = Color.Olive;
+            containsListBox.SetItemChecked((int)AddonContains.cfg, false);
+            containsListBox.SetItemChecked((int)AddonContains.maps, false);
+            containsListBox.SetItemChecked((int)AddonContains.materials, false);
+            containsListBox.SetItemChecked((int)AddonContains.media, false);
+            containsListBox.SetItemChecked((int)AddonContains.models, false);
+            containsListBox.SetItemChecked((int)AddonContains.particles, false);
+            containsListBox.SetItemChecked((int)AddonContains.resource, false);
+            containsListBox.SetItemChecked((int)AddonContains.scripts, false);
+            containsListBox.SetItemChecked((int)AddonContains.sound, false);
+            containsListBox.SetItemChecked((int)AddonContains.vpk, false);
+            containsListBox.SetItemChecked((int)AddonContains.p3s, false);
+            containsListBox.SetItemChecked((int)AddonContains.ans, false);
+
             Utils.Reset();
 
             Array.Clear(AddonMgr.addons);
@@ -100,6 +125,7 @@ namespace P3AddonManager
             addonListBox.CheckOnClick = true;
 
             saveButton.Enabled = false;
+            saveCurrentSettingsToolStripMenuItem.Enabled = false;
 
             // Will only force reload if it finds a completely new directory
             FindUnusedFolders();
@@ -107,6 +133,9 @@ namespace P3AddonManager
             string GameVer = $"The currently detected version of your Postal III installation.\r\n\r\nRed = Addons will not work for this Postal III\r\nOlive = Addons might or not work, make sure you have ZOOM or Ultrapatch\r\nGreen = Addons will work\n\nC:{P3Hash.Current_Client}\nS:{P3Hash.Current_Server}\nE:{P3Hash.Current_Exe}";
 
             toolTip.SetToolTip(gameVersionLabel, GameVer);
+
+            changeGamePathp3ToolStripMenuItem.Text = $"Change game path ({Utils.GetGameFolder()})";
+            addonBox.Text = $"Addons ({Utils.GetGameFolder()})";
         }
 
         public Form1()
@@ -119,7 +148,8 @@ namespace P3AddonManager
                 if (File.Exists(exe))
                 {
                     ini.Write("Path", Utils.GetExeLocation() + "\\", "Main");
-                    ini.Write("Game", Utils.GetExeLocation() + "\\p3", "Main");
+                    ini.Write("Game", "p3", "Main");
+                    ini.Write("Cmd", "-novid +sv_cheats 0", "Main");
                     exeInRoot = true;
                 }
                 else
@@ -129,7 +159,8 @@ namespace P3AddonManager
                     if (File.Exists(exe))
                     {
                         ini.Write("Path", Utils.GetExeLocation() + "\\", "Main");
-                        ini.Write("Game", Utils.GetExeLocation() + "\\cr_base", "Main");
+                        ini.Write("Game", "cr_base", "Main");
+                        ini.Write("Cmd", "-novid +sv_cheats 0", "Main");
                         exeInRoot = true;
                     }
                 }
@@ -139,13 +170,21 @@ namespace P3AddonManager
                     string msg = "No Postal III exe has been found.\nPlease select folder with \"p3.exe\" in it.";
                     string caption = "Information";
 
-                    MessageBox.Show(msg, caption, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    DialogResult res = MessageBox.Show(msg, caption, MessageBoxButtons.OKCancel, MessageBoxIcon.Error);
 
-                    bool bResult = false;
-                    while (!bResult)
+                    if (res == DialogResult.OK)
                     {
-                        bResult = PathLooping(ini);
+                        bool bResult = false;
+                        while (!bResult)
+                        {
+                            bResult = PathLooping(ini);
+                        }
                     }
+                    else if (res == DialogResult.Cancel)
+                    {
+                        Close();
+                    }
+
                 }
             }
 
@@ -156,7 +195,6 @@ namespace P3AddonManager
                 //Utils.RootFolder = ini.Read("Path", "Main");
             }
 
-
             Utils.SetExePath(ini.Read("Path", "Main"));
 
             InitializeComponent();
@@ -166,6 +204,11 @@ namespace P3AddonManager
 
             containsListBox.CheckOnClick = false;
             containsListBox.SelectionMode = SelectionMode.None;
+
+            if (ini.KeyExists("Cmd", "Main"))
+            {
+                cmdTextBox.Text = ini.Read("Cmd", "Main");
+            }
 
             Reload();
         }
@@ -242,7 +285,7 @@ namespace P3AddonManager
             RearrangeAddonList(index);
         }
 
-        private void UpdateUI(int index = -1)
+        public void UpdateUI(int index = -1)
         {
             // Update the enable state of all addons
             if (index == -1)
@@ -336,7 +379,7 @@ namespace P3AddonManager
             containsListBox.SetItemChecked((int)AddonContains.particles, addon.has.particle);
             containsListBox.SetItemChecked((int)AddonContains.resource, addon.has.resource);
             containsListBox.SetItemChecked((int)AddonContains.scripts, addon.has.script);
-            containsListBox.SetItemChecked((int)AddonContains.shaders, addon.has.shader);
+            //containsListBox.SetItemChecked((int)AddonContains.shaders, addon.has.shader);
             containsListBox.SetItemChecked((int)AddonContains.sound, addon.has.sound);
 
             if (addon.vpkV1)
@@ -404,6 +447,7 @@ namespace P3AddonManager
             conflictTextBox.Text = conflicts;
 
             saveButton.Enabled = true;
+            saveCurrentSettingsToolStripMenuItem.Enabled = true;
 
             //Console.WriteLine($"{addonListBox.SelectedIndex}{displayText}");
         }
@@ -433,51 +477,6 @@ namespace P3AddonManager
                 Utils.OpenUrl(addonLinkLabel.Text);
         }
 
-        private void saveButton_Click(object sender, EventArgs e)
-        {
-            VObject original = new VObject();
-
-            int index = 0;
-            for (int i = 0; i < AddonMgr.addons.Length; i++)
-            {
-                for (int j = 0; j < AddonMgr.addons.Length; j++)
-                {
-                    if (index == AddonMgr.addons[j].order)
-                    {
-                        VProperty temp = new VProperty(AddonMgr.addons[j].name, new VValue(AddonMgr.addons[j].enabled ? "1" : "0"));
-                        original.Insert(index++, temp);
-                    }
-                }
-            }
-
-            string volvo = VdfConvert.Serialize(original);
-            File.WriteAllText(Utils.GetAddonList(), $"\"AddonList\"\n{volvo}");
-
-            saveButton.Enabled = false;
-        }
-
-        private void reloadButton_Click(object sender, EventArgs e)
-        {
-            Reload(false);
-        }
-
-        private void addonInfoButton_Click(object sender, EventArgs e)
-        {
-            Addon addon = AddonMgr.GetAddon(addonListBox.SelectedIndex);
-
-            Utils.OpenFile($"{Utils.GetAddonFolder()}{addon.name}\\addoninfo.txt");
-        }
-
-        private void addonFolderButton_Click(object sender, EventArgs e)
-        {
-            Utils.OpenFolder(Utils.GetAddonFolder());
-        }
-
-        private void addonListButton_Click(object sender, EventArgs e)
-        {
-            Utils.OpenFile(Utils.GetAddonList());
-        }
-
         private void containsListBox_ItemCheck(object sender, ItemCheckEventArgs e)
         {
             //containsListBox.SetItemChecked(e.Index, e.CurrentValue == CheckState.Checked ? false : true);
@@ -494,7 +493,15 @@ namespace P3AddonManager
             }
             else
             {
-                throw new DirectoryNotFoundException($"The path '{Utils.GetAddonFolder()}' does not exist.");
+                Directory.CreateDirectory(Utils.GetAddonFolder());
+                directories = Directory.GetDirectories(Utils.GetAddonFolder());
+
+                //throw new DirectoryNotFoundException($"The path '{Utils.GetAddonFolder()}' does not exist.");
+            }
+
+            if (directories.Length <= 0)
+            {
+                MessageBox.Show("No addons found.", "No addons", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
 
             for (int i = 0; i < directories.Length; i++)
@@ -626,25 +633,33 @@ namespace P3AddonManager
             return true;
         }
 
-        private void vpkValidButton_Click(object sender, EventArgs e)
-        {
-            FolderBrowserDialog folderDlg = new()
-            {
-                ShowNewFolderButton = false
-            };
-
-            DialogResult result = folderDlg.ShowDialog();
-            if (result != DialogResult.OK)
-            {
-                return;
-            }
-
-            IsValidVPK(folderDlg.SelectedPath);
-        }
-
         static string vpk_pakName = "pak01";
 
-        private void buildVPKFolderMultiButton_Click()
+        private void upArrowButton_Click(object sender, EventArgs e)
+        {
+            int index = addonListBox.SelectedIndex;
+
+            if (index != 0)
+            {
+                index--;
+            }
+
+            RearrangeAddonList(index);
+        }
+
+        private void downArrowButton_Click(object sender, EventArgs e)
+        {
+            int index = addonListBox.SelectedIndex;
+
+            if (index != addonListBox.Items.Count - 1)
+            {
+                index++;
+            }
+
+            RearrangeAddonList(index);
+        }
+
+        private void multiToolStripMenuItem_Click(object sender, EventArgs e)
         {
             FolderBrowserDialog folderDlg = new()
             {
@@ -737,28 +752,7 @@ namespace P3AddonManager
             MessageBox.Show("Done.\nYou can find the VPKs inside the chosen directory.");
         }
 
-        private void buildVPKFolderMultiButton_MouseUp(object sender, MouseEventArgs e)
-        {
-            if (e.Button == MouseButtons.Left)
-            {
-                buildVPKFolderMultiButton_Click();
-            }
-            else if (e.Button == MouseButtons.Right)
-            {
-                using (Prompt prompt = new Prompt($"Current: \"{vpk_pakName}\"", "Enter new name"))
-                {
-                    if (prompt.Result.Length > 0)
-                    {
-                        vpk_pakName = prompt.Result;
-
-                        toolTip.SetToolTip(buildVPKFolderMultiButton, $"Builds a multi-pak VPK ({vpk_pakName}_dir)\n\nRight Click to change the name of the VPK");
-                    }
-                }
-            }
-
-        }
-
-        private void buildVPKFolderButton_Click(object sender, EventArgs e)
+        private void singleToolStripMenuItem_Click(object sender, EventArgs e)
         {
             FolderBrowserDialog folderDlg = new()
             {
@@ -816,28 +810,327 @@ namespace P3AddonManager
             MessageBox.Show("Done.\nYou can find the VPK outside of the chosen directory.");
         }
 
-        private void upArrowButton_Click(object sender, EventArgs e)
+        private void vPKValidCheckingFolderToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            int index = addonListBox.SelectedIndex;
-
-            if (index != 0)
+            FolderBrowserDialog folderDlg = new()
             {
-                index--;
+                ShowNewFolderButton = false
+            };
+
+            DialogResult result = folderDlg.ShowDialog();
+            if (result != DialogResult.OK)
+            {
+                return;
             }
 
-            RearrangeAddonList(index);
+            IsValidVPK(folderDlg.SelectedPath);
         }
 
-        private void downArrowButton_Click(object sender, EventArgs e)
+        private void addonsFolderToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            int index = addonListBox.SelectedIndex;
+            Utils.OpenFolder(Utils.GetAddonFolder());
+        }
 
-            if (index != addonListBox.Items.Count -1)
+        private void addoninfotxtactiveToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Addon addon = AddonMgr.GetAddon(addonListBox.SelectedIndex);
+
+            Utils.OpenFile($"{Utils.GetAddonFolder()}{addon.name}\\addoninfo.txt");
+        }
+
+        private void addonlisttxtToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Utils.OpenFile(Utils.GetAddonList());
+        }
+
+        private void helpToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            string caption = "Help";
+
+            string msg = "";
+
+            msg += "Welcome to Postal III Addon Manager.\n\n";
+
+            msg += "You can manage currently installed addons (usually inside p3/addons/) ";
+            msg += "with this program.\n";
+            msg += "It can also help with making your own addon. (built-in VPK tools, description editor, etc..)\n\n";
+
+            msg += "You can hover over certain items in the program to view their tips.\n\n";
+
+            msg += "It's worth noting this program will not work with retail copies of Postal III, and only ZOOM, Steam (since 2023), and Ultrapatch(+Angel) will work.\n\n";
+
+            msg += "The \"Detected Version\" which the program displays should be very accurate, however the minimum version the addon recommends might not be correct at all times, so it is highly recommended to read its description.\n";
+            msg += "If you are using Linux, this feature of the program will not work properly.\n\n";
+
+            msg += "The order of addons is very important, you can change the order by right clicking on an addon on the right, and dragging it to a spot to your liking.\nYou can also just use the Up and Down buttons.\n";
+            msg += "Conflicts box will tell you if addons are modifying same files, so you will be able to deduce which addon is more important in the order list.";
+
+            MessageBox.Show(msg, caption, MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void saveCurrentSettingsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            VObject original = new VObject();
+
+            int index = 0;
+            for (int i = 0; i < AddonMgr.addons.Length; i++)
             {
-                index++;
+                for (int j = 0; j < AddonMgr.addons.Length; j++)
+                {
+                    if (index == AddonMgr.addons[j].order)
+                    {
+                        VProperty temp = new VProperty(AddonMgr.addons[j].name, new VValue(AddonMgr.addons[j].enabled ? "1" : "0"));
+                        original.Insert(index++, temp);
+                    }
+                }
             }
 
-            RearrangeAddonList(index);
+            string volvo = VdfConvert.Serialize(original);
+            File.WriteAllText(Utils.GetAddonList(), $"\"AddonList\"\n{volvo}");
+
+            saveCurrentSettingsToolStripMenuItem.Enabled = false;
+            saveButton.Enabled = false;
+
+            var ini = new IniFile("p3_addonmgr.ini");
+            ini.Write("Cmd", cmdTextBox.Text, "Main");
+        }
+
+        private void reloadResetToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Reload(false);
+        }
+
+        private void changeExePathToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            var ini = new IniFile("p3_addonmgr.ini");
+            if (!PathLooping(ini))
+            {
+                string msg = "No Postal III exe has been found.\nPlease select folder with \"p3.exe\" in it.";
+                string caption = "Information";
+
+                DialogResult res = MessageBox.Show(msg, caption, MessageBoxButtons.OKCancel, MessageBoxIcon.Error);
+            }
+        }
+
+        private void changeGamePathp3ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            FolderBrowserDialog folderDlg = new()
+            {
+                ShowNewFolderButton = false
+            };
+
+            DialogResult result = folderDlg.ShowDialog();
+            if (result == DialogResult.OK)
+            {
+                string newGameFolder = folderDlg.SelectedPath.Replace(Utils.GetExePath(), "");
+
+                if (newGameFolder == Utils.GetGameFolder())
+                {
+                    MessageBox.Show($"Game folder is already \"{newGameFolder}\".", "Change Game Folder", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                DialogResult res = MessageBox.Show($"The selected game folder is \"{newGameFolder}\", are you sure?", "Change Game Folder", MessageBoxButtons.YesNo, MessageBoxIcon.Information);
+                if (res == DialogResult.Yes)
+                {
+                    Utils.GameFolder = newGameFolder;
+                    var ini = new IniFile("p3_addonmgr.ini");
+                    ini.Write("Game", newGameFolder, "Main");
+
+                    MessageBox.Show($"Game folder is now \"{newGameFolder}\", program restarts..");
+                    Reload(true);
+                }
+            }
+        }
+
+        private void exitToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Close();
+        }
+
+        private void buildVPKFromFolderToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void changePakNameToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            using (Prompt prompt = new Prompt($"Current: \"{vpk_pakName}\"", "Enter new name"))
+            {
+                if (prompt.Result.Length > 0)
+                {
+                    vpk_pakName = prompt.Result;
+
+                    //toolTip.SetToolTip(buildVPKFolderMultiButton, $"Builds a multi-pak VPK ({vpk_pakName}_dir)\n\nRight Click to change the name of the VPK");
+                }
+            }
+        }
+        private void descriptionEditorToolStripMenuItem_Click_1(object sender, EventArgs e)
+        {
+            if (addonEditor == null || addonEditor.IsDisposed)
+            {
+                addonEditor = new AddonEditorForm(this);
+            }
+
+            addonEditor.Show();
+            addonEditor.InsertAddonInfo(AddonMgr.GetAddon(addonListBox.SelectedIndex));
+        }
+
+        private void newAddonToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            using (Prompt prompt = new Prompt($"Enter a (folder) name for the addon.", "New Addon Creation"))
+            {
+                if (prompt.Result.Length > 0)
+                {
+                    bool bCreate = false;
+
+                    if (Directory.Exists($"{Utils.GetAddonFolder()}\\{prompt.Result}"))
+                    {
+                        if (!File.Exists($"{Utils.GetAddonFolder()}\\{prompt.Result}\\addoninfo.txt"))
+                        {
+                            // Maybe.... maybe not
+                            bCreate = true;
+                        }
+                    }
+                    else
+                    {
+                        bCreate = true;
+                    }
+
+                    if (bCreate)
+                    {
+                        Directory.CreateDirectory($"{Utils.GetAddonFolder()}\\{prompt.Result}");
+
+                        // Overwrite the addoninfo...
+                        VObject addoninfo = new VObject();
+
+                        Utils.AddToVDF(addoninfo, "addontitle", "Unnamed Addon");
+                        Utils.AddToVDF(addoninfo, "addonauthor", "Anonymous");
+                        Utils.AddToVDF(addoninfo, "addonversion", "v1.0");
+                        Utils.AddToVDF(addoninfo, "addondescription", "No description.");
+                        Utils.AddToVDF(addoninfo, "addonlink", "https://www.youtube.com/watch?v=dQw4w9WgXcQ");
+
+                        Utils.AddToVDF(addoninfo, "postal3script", "scripts/Postal3Script/ai_scripts.txt");
+                        Utils.AddToVDF(addoninfo, "angelscript", "scripts/AngelScript/!as_scripts.as");
+
+                        Utils.AddToVDF(addoninfo, "addonminimum", "zoom");
+
+                        string data = VdfConvert.Serialize(addoninfo);
+                        File.WriteAllText($"{Utils.GetAddonFolder()}\\{prompt.Result}\\addoninfo.txt", $"\"AddonInfo\"\n{data}");
+
+                        Reload(true);
+
+                        Addon newAddon = AddonMgr.GetAddonByName(prompt.Result);
+                        if (addonEditor == null || addonEditor.IsDisposed)
+                        {
+                            addonEditor = new AddonEditorForm(this);
+                        }
+
+                        addonEditor.Show();
+                        addonEditor.InsertAddonInfo(newAddon);
+                    }
+                    else
+                    {
+                        MessageBox.Show("An addon with the same name already exists.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+
+                    //toolTip.SetToolTip(buildVPKFolderMultiButton, $"Builds a multi-pak VPK ({vpk_pakName}_dir)\n\nRight Click to change the name of the VPK");
+                }
+            }
+        }
+
+        private static void CopyAllFromAtoB(string source, string target)
+        {
+            foreach (string dir in Directory.GetDirectories(source, "*", SearchOption.AllDirectories))
+            {
+                Directory.CreateDirectory(dir.Replace(source, target));
+            }
+
+            foreach (string file in Directory.GetFiles(source, "*.*", SearchOption.AllDirectories))
+            {
+                File.Copy(file, file.Replace(source, target), true);
+            }
+        }
+
+        private void cloneSelectedToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Addon addon = AddonMgr.GetAddon(addonListBox.SelectedIndex);
+
+            using (Prompt prompt = new Prompt($"Original's name: \"{addon.name}\"", "Clone Creation"))
+            {
+                if (prompt.Result.Length > 0)
+                {
+                    if (!Directory.Exists($"{Utils.GetAddonFolder()}\\{prompt.Result}"))
+                    {
+                        Directory.CreateDirectory($"{Utils.GetAddonFolder()}\\{prompt.Result}");
+
+                        CopyAllFromAtoB($"{Utils.GetAddonFolder()}\\{addon.name}", $"{Utils.GetAddonFolder()}\\{prompt.Result}");
+
+                        Reload(true);
+
+                        Addon cloneAddon = AddonMgr.GetAddonByName(prompt.Result);
+                        if (addonEditor == null || addonEditor.IsDisposed)
+                        {
+                            addonEditor = new AddonEditorForm(this);
+                        }
+
+                        addonEditor.Show();
+                        addonEditor.InsertAddonInfo(cloneAddon);
+                    }
+                    else
+                    {
+                        MessageBox.Show("Folder already exists.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
+
+        private void saveButton_Click(object sender, EventArgs e)
+        {
+            saveCurrentSettingsToolStripMenuItem_Click(sender, e);
+        }
+
+        private void reloadButton_Click(object sender, EventArgs e)
+        {
+            reloadResetToolStripMenuItem_Click(sender, e);
+        }
+
+        private void launchButton_Click(object sender, EventArgs e)
+        {
+            // Possible exes to run the game with - Kizoky
+            string exeCR = Utils.GetExePath() + "\\cr_base.exe";
+            string exeP3 = Utils.GetExePath() + "\\p3.exe";
+
+            if (!File.Exists(exeCR))
+            {
+                if (!File.Exists(exeP3))
+                {
+                    MessageBox.Show("Postal III executable was not found!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+                else
+                {
+                    exeCR = exeP3;
+                }
+            }
+
+            try
+            {
+                Process p = new Process();
+                p.StartInfo.FileName = exeCR;
+                p.StartInfo.Arguments = $"-game {Utils.GetGameFolder()} {cmdTextBox.Text}";
+                p.Start();
+            }
+            catch
+            {
+                MessageBox.Show("Couldn't start Postal III!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void cmdTextBox_TextChanged(object sender, EventArgs e)
+        {
+            saveButton.Enabled = true;
+            saveCurrentSettingsToolStripMenuItem.Enabled = true;
         }
     }
 }

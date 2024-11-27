@@ -25,6 +25,9 @@ namespace P3AddonManager
         }
         public void CheckMinimum()
         {
+            bZOOM = false;
+            bULTRAPATCH = false;
+            bANGEL = false;
             bool bUnknown = true;
 
             // ZOOM addon (example)
@@ -49,7 +52,7 @@ namespace P3AddonManager
             else
             {
                 // TODO: Simplify this for future releases
-                // ex.: Angelv1.2.0 mods will not work with Angelv1.1.0
+                // ex.: Angelv1.2.0 mods will/might not work with Angelv1.1.0
 
                 if (ver.Contains("ultrapatch") || ver.Contains("up"))
                 {

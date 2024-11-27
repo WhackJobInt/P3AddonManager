@@ -36,14 +36,19 @@ namespace P3AddonManager
 
             Angelv1_0_0,
 
-            ADDON_SUPPORT, //
+                ADDON_SUPPORT, //
 
             ZOOM,
 
             Angelv1_1_0,
 
-            MAX
+                MAX
         };
+
+        static public int AddonIndex(P3Version version)
+        {
+            return version - P3Version.ADDON_SUPPORT;
+        }
 
         // You could argue that this could be made better... you are right
         public static string[] P3_Clients =
