@@ -75,18 +75,43 @@ namespace SharpVPK
         private void LoadParts(string filename)
         {
             Parts = new List<ArchivePart>();
-            var fileBaseName = filename.Split('_')[0];
-            foreach (var file in Directory.GetFiles(Path.GetDirectoryName(filename)))
+
+            var fileBaseName = Path.GetFileNameWithoutExtension(filename)?.Split('_')[0];
+            if (fileBaseName == null)
+                throw new ArgumentException("Invalid filename format", nameof(filename));
+
+            var directory = Path.GetDirectoryName(filename);
+            if (directory == null)
+                throw new ArgumentException("Invalid directory for the provided filename", nameof(filename));
+
+            var currentFile = new FileInfo(filename);
+            var files = Directory.GetFiles(directory)
+                                 .Where(file => !string.Equals(file, filename, StringComparison.OrdinalIgnoreCase))
+                                 .Where(file => Path.GetFileNameWithoutExtension(file)?.Split('_')[0] == fileBaseName);
+
+            foreach (var file in files)
             {
-                if (file.Split('_')[0] != fileBaseName || file == filename)
-                    continue;
-                var fi = new FileInfo(file);
-                string[] spl = file.Split('_');
-                var partIdx = Int32.Parse(spl[spl.Length - 1].Split('.')[0]);
-                Parts.Add(new ArchivePart((uint)fi.Length, partIdx, file));
+                var partIndex = ExtractPartIndex(file);
+                if (partIndex.HasValue)
+                {
+                    var fileInfo = new FileInfo(file);
+                    Parts.Add(new ArchivePart((uint)fileInfo.Length, partIndex.Value, file));
+                }
             }
-            Parts.Add(new ArchivePart((uint) new FileInfo(filename).Length, -1, filename));
+
+            Parts.Add(new ArchivePart((uint)currentFile.Length, -1, filename));
             Parts = Parts.OrderBy(p => p.Index).ToList();
+        }
+
+        private int? ExtractPartIndex(string filePath)
+        {
+            var fileName = Path.GetFileNameWithoutExtension(filePath);
+            var segments = fileName?.Split('_');
+            if (segments == null || segments.Length < 2)
+                return null;
+
+            var indexSegment = segments[^1];
+            return int.TryParse(indexSegment, out var index) ? index : (int?)null;
         }
     }
 }
