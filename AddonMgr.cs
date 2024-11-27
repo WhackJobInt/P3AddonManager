@@ -155,13 +155,17 @@ namespace P3AddonManager
                     enabled = true;
                 }
 
-                Addon addon = new($"{pair.Key}", index, enabled);
 
-                if (ReadAddonInfo(addon))
+                if (Directory.Exists($"{Utils.GetAddonFolder()}{pair.Key}"))
                 {
-                    AddAddon(addon);
-                    addon.CheckFeatures();
-                    index++;
+                    Addon addon = new($"{pair.Key}", index, enabled);
+
+                    if (ReadAddonInfo(addon))
+                    {
+                        AddAddon(addon);
+                        addon.CheckFeatures();
+                        index++;
+                    }
                 }
             }
 
@@ -232,6 +236,19 @@ namespace P3AddonManager
             }
         }
 
+        static List<string> SplitVPK(string input, char delimiter)
+        {
+            string[] tokens = input.Split(delimiter);
+
+            List<string> result = tokens
+                .Select(token => token.Trim())
+                .Select(token => token.ToLower())
+                .Select(token => token.Replace(".vpk", ""))
+                .ToList();
+
+            return result;
+        }
+
         // GetAddonFolder() + $"{addon.name}\\addoninfo.txt"
         public static bool ReadAddonInfo(Addon addon)
         {
@@ -267,6 +284,7 @@ namespace P3AddonManager
             fileContent = Regex.Replace(fileContent, "postal3script", "postal3script", RegexOptions.IgnoreCase);
             fileContent = Regex.Replace(fileContent, "angelscript", "angelscript", RegexOptions.IgnoreCase);
             fileContent = Regex.Replace(fileContent, "addonminimum", "addonminimum", RegexOptions.IgnoreCase);
+            fileContent = Regex.Replace(fileContent, "addonvpks", "addonvpks", RegexOptions.IgnoreCase);
 
             dynamic volvo = VdfConvert.Deserialize(fileContent);
 
@@ -292,6 +310,21 @@ namespace P3AddonManager
             addon.info.Postal3Script = Convert.ToString(volvo.Value.postal3script);
             addon.info.AngelScript = Convert.ToString(volvo.Value.angelscript);
             addon.info.Minimum = Convert.ToString(volvo.Value.addonminimum);
+
+            // Split VPKs
+            if (!string.IsNullOrEmpty(Convert.ToString(volvo.Value.addonvpks)))
+            {
+                List<string> VPKs = SplitVPK(Convert.ToString(volvo.Value.addonvpks), ';');
+
+                int existingCount = addon.info.VPKs?.Length ?? 0;
+                Array.Resize(ref addon.info.VPKs, existingCount + VPKs.Count);
+
+                for (int i = 0; i < VPKs.Count; i++)
+                {
+                    addon.info.VPKs[existingCount + i] = VPKs[i];
+                    //Console.WriteLine(VPKs[i]);
+                }
+            }
 
             // Fallback
             if (addon.info.Minimum == null || addon.info.Minimum.Length <= 0)

@@ -28,6 +28,7 @@ namespace P3AddonManager
         {
             label1 = new Label();
             addonGroupBox = new GroupBox();
+            selectVPKsButton = new Button();
             groupBox2 = new GroupBox();
             exitButton = new Button();
             saveButton = new Button();
@@ -35,9 +36,11 @@ namespace P3AddonManager
             addonPictureBox = new PictureBox();
             descriptionTextBox = new RichTextBox();
             minimumComboBox = new ComboBox();
+            vpksTextBox = new TextBox();
             asTextBox = new TextBox();
             label8 = new Label();
             label7 = new Label();
+            label9 = new Label();
             label6 = new Label();
             p3sTextBox = new TextBox();
             label5 = new Label();
@@ -64,12 +67,15 @@ namespace P3AddonManager
             // 
             // addonGroupBox
             // 
+            addonGroupBox.Controls.Add(selectVPKsButton);
             addonGroupBox.Controls.Add(groupBox2);
             addonGroupBox.Controls.Add(descriptionTextBox);
             addonGroupBox.Controls.Add(minimumComboBox);
+            addonGroupBox.Controls.Add(vpksTextBox);
             addonGroupBox.Controls.Add(asTextBox);
             addonGroupBox.Controls.Add(label8);
             addonGroupBox.Controls.Add(label7);
+            addonGroupBox.Controls.Add(label9);
             addonGroupBox.Controls.Add(label6);
             addonGroupBox.Controls.Add(p3sTextBox);
             addonGroupBox.Controls.Add(label5);
@@ -83,10 +89,20 @@ namespace P3AddonManager
             addonGroupBox.Controls.Add(label1);
             addonGroupBox.Location = new Point(12, 12);
             addonGroupBox.Name = "addonGroupBox";
-            addonGroupBox.Size = new Size(871, 591);
+            addonGroupBox.Size = new Size(871, 648);
             addonGroupBox.TabIndex = 1;
             addonGroupBox.TabStop = false;
             addonGroupBox.Text = "Selected Addon";
+            // 
+            // selectVPKsButton
+            // 
+            selectVPKsButton.Location = new Point(414, 212);
+            selectVPKsButton.Name = "selectVPKsButton";
+            selectVPKsButton.Size = new Size(92, 23);
+            selectVPKsButton.TabIndex = 8;
+            selectVPKsButton.Text = "Select VPKs ...";
+            selectVPKsButton.UseVisualStyleBackColor = true;
+            selectVPKsButton.Click += selectVPKs_Click;
             // 
             // groupBox2
             // 
@@ -144,10 +160,10 @@ namespace P3AddonManager
             // descriptionTextBox
             // 
             descriptionTextBox.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            descriptionTextBox.Location = new Point(6, 253);
+            descriptionTextBox.Location = new Point(6, 285);
             descriptionTextBox.Name = "descriptionTextBox";
             descriptionTextBox.ScrollBars = RichTextBoxScrollBars.ForcedVertical;
-            descriptionTextBox.Size = new Size(500, 321);
+            descriptionTextBox.Size = new Size(500, 357);
             descriptionTextBox.TabIndex = 2;
             descriptionTextBox.Text = "";
             descriptionTextBox.TextChanged += descriptionTextBox_TextChanged;
@@ -163,6 +179,15 @@ namespace P3AddonManager
             minimumComboBox.SelectedIndexChanged += minimumComboBox_SelectedIndexChanged;
             minimumComboBox.SelectionChangeCommitted += minimumComboBox_SelectionChangeCommitted;
             // 
+            // vpksTextBox
+            // 
+            vpksTextBox.Location = new Point(90, 236);
+            vpksTextBox.Name = "vpksTextBox";
+            vpksTextBox.ReadOnly = true;
+            vpksTextBox.Size = new Size(416, 23);
+            vpksTextBox.TabIndex = 1;
+            vpksTextBox.TextChanged += asTextBox_TextChanged;
+            // 
             // asTextBox
             // 
             asTextBox.Location = new Point(90, 166);
@@ -174,7 +199,7 @@ namespace P3AddonManager
             // label8
             // 
             label8.AutoSize = true;
-            label8.Location = new Point(6, 235);
+            label8.Location = new Point(5, 267);
             label8.Name = "label8";
             label8.Size = new Size(70, 15);
             label8.TabIndex = 0;
@@ -188,6 +213,15 @@ namespace P3AddonManager
             label7.Size = new Size(138, 15);
             label7.TabIndex = 0;
             label7.Text = "Minimum Game Version:";
+            // 
+            // label9
+            // 
+            label9.AutoSize = true;
+            label9.Location = new Point(6, 239);
+            label9.Name = "label9";
+            label9.Size = new Size(36, 15);
+            label9.TabIndex = 0;
+            label9.Text = "VPKs:";
             // 
             // label6
             // 
@@ -276,7 +310,7 @@ namespace P3AddonManager
             // 
             // AddonEditorForm
             // 
-            ClientSize = new Size(879, 616);
+            ClientSize = new Size(888, 668);
             ControlBox = false;
             Controls.Add(addonGroupBox);
             FormBorderStyle = FormBorderStyle.Fixed3D;
@@ -292,6 +326,9 @@ namespace P3AddonManager
 
         private Button exitButton;
         private Button saveButton;
+        private Button selectVPKsButton;
+        private TextBox vpksTextBox;
+        private Label label9;
         Addon editedAddon;
 
         public void InsertAddonInfo(Addon addon)
@@ -306,6 +343,18 @@ namespace P3AddonManager
             linkTextBox.Text = addon.info.Link;
             p3sTextBox.Text = addon.info.Postal3Script;
             asTextBox.Text = addon.info.AngelScript;
+
+            vpksTextBox.Text = "";
+
+            for (int i = 0; i < addon.info.VPKs.Length; i++)
+            {
+                vpksTextBox.Text += $"{addon.info.VPKs[i]}";
+
+                if ((i + 1) < addon.info.VPKs.Length)
+                {
+                    vpksTextBox.Text += ";";
+                }
+            }
 
             // TODO: version handling
             if (addon.info.bZOOM)
@@ -375,13 +424,15 @@ namespace P3AddonManager
             // ZOOM doesn't have support for injecting Postal3Script... nor do they have AngelScript
             if (minimumComboBox.SelectedIndex < P3Hash.AddonIndex(P3Hash.P3Version.Angelv1_1_0))
             {
-                p3sTextBox.ForeColor = Color.Red;
-                asTextBox.ForeColor = Color.Red;
+                p3sTextBox.BackColor = Color.Red;
+                asTextBox.BackColor = Color.Red;
+                vpksTextBox.BackColor = Color.Red;
             }
             else
             {
-                p3sTextBox.ForeColor = Color.Black;
-                asTextBox.ForeColor = Color.Black;
+                p3sTextBox.BackColor = Color.White;
+                asTextBox.BackColor = Color.White;
+                vpksTextBox.BackColor = Color.FromArgb(255, 240, 240, 240);
             }
 
             UpdateText();
@@ -419,6 +470,8 @@ namespace P3AddonManager
 
             Utils.AddToVDF(addoninfo, "addonminimum", minimum);
 
+            Utils.AddToVDF(addoninfo, "addonvpks", vpksTextBox.Text);
+
             string data = VdfConvert.Serialize(addoninfo);
             File.WriteAllText($"{Utils.GetAddonFolder()}{editedAddon.name}\\addoninfo.txt", $"\"AddonInfo\"\n{data}");
 
@@ -436,6 +489,8 @@ namespace P3AddonManager
             editedAddon.info.CheckMinimum();
 
             mainForm.UpdateUI();
+
+            mainForm.Reload(true);
 
             MessageBox.Show("Addon's info saved.", "Saved", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
@@ -478,6 +533,79 @@ namespace P3AddonManager
         private void descriptionTextBox_TextChanged(object sender, EventArgs e)
         {
             UpdateText();
+        }
+
+        private void selectVPKs_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog fileDlg = new()
+            {
+                InitialDirectory = $"{Utils.GetAddonFolder()}{editedAddon.name}",
+                Title = "Choose one or multiple VPKs.",
+                CheckFileExists = true,
+                CheckPathExists = true,
+                Multiselect = true,
+                DefaultExt = ".vpk",
+                Filter = "Valve Pak (V1) files (*.vpk)|*.vpk",
+            };
+
+            DialogResult result = fileDlg.ShowDialog();
+            if (result != DialogResult.OK)
+            {
+                return;
+            }
+
+            if (fileDlg.FileNames.Length <= 0)
+            {
+                return;
+            }
+
+            // Check if someone is trying to make the game vomit
+            for (int i = 0; i < fileDlg.FileNames.Length; i++)
+            {
+                string file = fileDlg.FileNames[i].Replace(fileDlg.InitialDirectory + "\\", "");
+                if (file == fileDlg.FileNames[i])
+                {
+                    MessageBox.Show("Make sure to stay within the addon's root folder", "Invalid path", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                file = file.Replace(".vpk", "");
+
+                // wtf?
+                if (file.Length < 3)
+                   continue;
+
+                string L = String.Format($"{file[file.Length - 1]}");
+                string L1 = String.Format($"{file[file.Length - 2]}");
+                string L2 = String.Format($"{file[file.Length - 3]}");
+
+                //Console.WriteLine($"{L2}{L1}{L}");
+
+                int temp = -1;
+
+                if (int.TryParse(L, out temp) &&
+                    int.TryParse(L1, out temp) &&
+                    int.TryParse(L2, out temp))
+                {
+                    MessageBox.Show("VPK Part detected!\nMake sure to choose _dir instead!", "Invalid", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+            }
+
+            vpksTextBox.Text = "";
+
+            for (int i = 0; i < fileDlg.FileNames.Length; i++)
+            {
+                string file = fileDlg.FileNames[i].Replace(fileDlg.InitialDirectory + "\\", "").Replace(".vpk", "");
+
+                vpksTextBox.Text += $"{file}";
+
+                if ((i + 1) < fileDlg.FileNames.Length)
+                {
+                    vpksTextBox.Text += ";";
+                }
+            }
         }
     }
 }

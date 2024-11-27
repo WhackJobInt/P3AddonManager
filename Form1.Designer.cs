@@ -53,6 +53,8 @@
             saveCurrentSettingsToolStripMenuItem = new ToolStripMenuItem();
             reloadResetToolStripMenuItem = new ToolStripMenuItem();
             toolStripSeparator1 = new ToolStripSeparator();
+            addonifyFoldersToolStripMenuItem = new ToolStripMenuItem();
+            generateAddoninfotxtForEmptyFoldersToolStripMenuItem = new ToolStripMenuItem();
             changeExePathToolStripMenuItem = new ToolStripMenuItem();
             changeGamePathp3ToolStripMenuItem = new ToolStripMenuItem();
             toolStripSeparator2 = new ToolStripSeparator();
@@ -323,7 +325,7 @@
             // 
             // p3AMToolStripMenuItem
             // 
-            p3AMToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { saveCurrentSettingsToolStripMenuItem, reloadResetToolStripMenuItem, toolStripSeparator1, changeExePathToolStripMenuItem, changeGamePathp3ToolStripMenuItem, toolStripSeparator2, exitToolStripMenuItem });
+            p3AMToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { saveCurrentSettingsToolStripMenuItem, reloadResetToolStripMenuItem, toolStripSeparator1, addonifyFoldersToolStripMenuItem, changeExePathToolStripMenuItem, changeGamePathp3ToolStripMenuItem, toolStripSeparator2, exitToolStripMenuItem });
             p3AMToolStripMenuItem.Name = "p3AMToolStripMenuItem";
             p3AMToolStripMenuItem.Size = new Size(46, 19);
             p3AMToolStripMenuItem.Text = "Main";
@@ -350,6 +352,21 @@
             // 
             toolStripSeparator1.Name = "toolStripSeparator1";
             toolStripSeparator1.Size = new Size(203, 6);
+            // 
+            // addonifyFoldersToolStripMenuItem
+            // 
+            addonifyFoldersToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { generateAddoninfotxtForEmptyFoldersToolStripMenuItem });
+            addonifyFoldersToolStripMenuItem.Name = "addonifyFoldersToolStripMenuItem";
+            addonifyFoldersToolStripMenuItem.Size = new Size(206, 22);
+            addonifyFoldersToolStripMenuItem.Text = "Addonify Folders ...";
+            // 
+            // generateAddoninfotxtForEmptyFoldersToolStripMenuItem
+            // 
+            generateAddoninfotxtForEmptyFoldersToolStripMenuItem.Name = "generateAddoninfotxtForEmptyFoldersToolStripMenuItem";
+            generateAddoninfotxtForEmptyFoldersToolStripMenuItem.Size = new Size(253, 22);
+            generateAddoninfotxtForEmptyFoldersToolStripMenuItem.Text = "Generate addoninfo.txt for folders";
+            generateAddoninfotxtForEmptyFoldersToolStripMenuItem.ToolTipText = "Make ZOOM/Ultrapatch and Postal III Addon Manager recognize folders that do not have any valid addoninfo.txt";
+            generateAddoninfotxtForEmptyFoldersToolStripMenuItem.Click += generateAddoninfotxtForEmptyFoldersToolStripMenuItem_Click;
             // 
             // changeExePathToolStripMenuItem
             // 
@@ -392,7 +409,7 @@
             openAddonsFolderToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { addonsFolderToolStripMenuItem, addoninfotxtactiveToolStripMenuItem, addonlisttxtToolStripMenuItem });
             openAddonsFolderToolStripMenuItem.Name = "openAddonsFolderToolStripMenuItem";
             openAddonsFolderToolStripMenuItem.Size = new Size(220, 22);
-            openAddonsFolderToolStripMenuItem.Text = "Open ..";
+            openAddonsFolderToolStripMenuItem.Text = "Open ...";
             // 
             // addonsFolderToolStripMenuItem
             // 
@@ -649,5 +666,7 @@
         private GroupBox groupBox1;
         private Button launchButton;
         private TextBox cmdTextBox;
+        private ToolStripMenuItem addonifyFoldersToolStripMenuItem;
+        private ToolStripMenuItem generateAddoninfotxtForEmptyFoldersToolStripMenuItem;
     }
 }

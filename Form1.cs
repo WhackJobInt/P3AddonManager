@@ -17,7 +17,7 @@ namespace P3AddonManager
 {
     public partial class Form1 : Form
     {
-        AddonEditorForm addonEditor = null;
+        AddonEditorForm addonEditor;
 
         enum AddonContains
         {
@@ -65,7 +65,7 @@ namespace P3AddonManager
             return false;
         }
 
-        void Reload(bool newRun = true)
+        public void Reload(bool newRun = true)
         {
             addonPictureBox.Image = addonPictureBox.InitialImage;
             conflictTextBox.Text = "Conflicts with: n/a";
@@ -136,6 +136,9 @@ namespace P3AddonManager
 
             changeGamePathp3ToolStripMenuItem.Text = $"Change game path ({Utils.GetGameFolder()})";
             addonBox.Text = $"Addons ({Utils.GetGameFolder()})";
+
+            // Somewhat dirty, but it cleans up addonlist of non-existent folders
+            SaveToAddonList();
         }
 
         public Form1()
@@ -868,7 +871,7 @@ namespace P3AddonManager
             MessageBox.Show(msg, caption, MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
-        private void saveCurrentSettingsToolStripMenuItem_Click(object sender, EventArgs e)
+        private void SaveToAddonList()
         {
             VObject original = new VObject();
 
@@ -893,6 +896,11 @@ namespace P3AddonManager
 
             var ini = new IniFile("p3_addonmgr.ini");
             ini.Write("Cmd", cmdTextBox.Text, "Main");
+        }
+
+        private void saveCurrentSettingsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            SaveToAddonList();
         }
 
         private void reloadResetToolStripMenuItem_Click(object sender, EventArgs e)
@@ -1014,6 +1022,7 @@ namespace P3AddonManager
                         Utils.AddToVDF(addoninfo, "angelscript", "scripts/AngelScript/!as_scripts.as");
 
                         Utils.AddToVDF(addoninfo, "addonminimum", "zoom");
+                        Utils.AddToVDF(addoninfo, "addonvpks", "");
 
                         string data = VdfConvert.Serialize(addoninfo);
                         File.WriteAllText($"{Utils.GetAddonFolder()}\\{prompt.Result}\\addoninfo.txt", $"\"AddonInfo\"\n{data}");
@@ -1087,7 +1096,7 @@ namespace P3AddonManager
 
         private void saveButton_Click(object sender, EventArgs e)
         {
-            saveCurrentSettingsToolStripMenuItem_Click(sender, e);
+            SaveToAddonList();
         }
 
         private void reloadButton_Click(object sender, EventArgs e)
@@ -1131,6 +1140,117 @@ namespace P3AddonManager
         {
             saveButton.Enabled = true;
             saveCurrentSettingsToolStripMenuItem.Enabled = true;
+        }
+
+        private void generateAddoninfotxtForEmptyFoldersToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            string[] directories;
+
+            if (Directory.Exists(Utils.GetAddonFolder()))
+            {
+                directories = Directory.GetDirectories(Utils.GetAddonFolder());
+            }
+            else
+            {
+                Directory.CreateDirectory(Utils.GetAddonFolder());
+                directories = Directory.GetDirectories(Utils.GetAddonFolder());
+
+                //throw new DirectoryNotFoundException($"The path '{Utils.GetAddonFolder()}' does not exist.");
+            }
+
+            if (directories.Length <= 0)
+            {
+                MessageBox.Show("No addons found.", "No addons", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+
+            for (int i = 0; i < directories.Length; i++)
+            {
+                directories[i] = directories[i].Replace(Utils.GetAddonFolder(), "");
+            }
+
+            VObject original = new VObject();
+
+            int index = 0;
+            for (int i = 0; i < AddonMgr.addons.Length; i++)
+            {
+                for (int j = 0; j < AddonMgr.addons.Length; j++)
+                {
+                    if (index == AddonMgr.addons[j].order)
+                    {
+                        VProperty temp = new VProperty(AddonMgr.addons[j].name, new VValue(AddonMgr.addons[j].enabled ? "1" : "0"));
+                        original.Insert(index++, temp);
+                    }
+                }
+            }
+
+            bool bNewFolder = false;
+            foreach (string directory in directories)
+            {
+                bool bFound = false;
+                for (int i = 0; i < AddonMgr.addons.Length; i++)
+                {
+                    if (directory == AddonMgr.addons[i].name)
+                    {
+                        bFound = true;
+                        break;
+                    }
+                }
+
+                if (bFound)
+                {
+                    continue;
+                }
+
+                bool bInvalid = false;
+
+                if (!File.Exists($"{Utils.GetAddonFolder()}\\{directory}\\addoninfo.txt"))
+                {
+                    bInvalid = true;
+                }
+                else
+                {
+                    string fileContent = File.ReadAllText($"{Utils.GetAddonFolder()}\\{directory}\\addoninfo.txt");
+
+                    // invalid
+                    if (fileContent.Length <= 0)
+                    {
+                        bInvalid = true;
+                    }
+                }
+
+                if (bInvalid)
+                {
+                    VProperty temp = new VProperty(directory, new VValue("0"));
+                    original.Insert(index++, temp);
+                    bNewFolder = true;
+
+                    // Overwrite the addoninfo...
+                    VObject addoninfo = new VObject();
+
+                    Utils.AddToVDF(addoninfo, "addontitle", "Unnamed Addon");
+                    Utils.AddToVDF(addoninfo, "addonauthor", "Anonymous");
+                    Utils.AddToVDF(addoninfo, "addonversion", "v1.0");
+                    Utils.AddToVDF(addoninfo, "addondescription", "No description.");
+                    Utils.AddToVDF(addoninfo, "addonlink", "https://www.youtube.com/watch?v=dQw4w9WgXcQ");
+
+                    Utils.AddToVDF(addoninfo, "postal3script", "scripts/Postal3Script/ai_scripts.txt");
+                    Utils.AddToVDF(addoninfo, "angelscript", "scripts/AngelScript/!as_scripts.as");
+
+                    Utils.AddToVDF(addoninfo, "addonminimum", "zoom");
+                    Utils.AddToVDF(addoninfo, "addonvpks", "");
+
+                    string data = VdfConvert.Serialize(addoninfo);
+                    File.WriteAllText($"{Utils.GetAddonFolder()}{directory}\\addoninfo.txt", $"\"AddonInfo\"\n{data}");
+                }
+            }
+
+            if (bNewFolder)
+            {
+                string volvo = VdfConvert.Serialize(original);
+                File.WriteAllText(Utils.GetAddonList(), $"\"AddonList\"\n{volvo}");
+
+                Reload(false);
+            }
         }
     }
 }

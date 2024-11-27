@@ -71,12 +71,9 @@ namespace P3AddonManager
                 has.sound = true;
             }
 
-            if (File.Exists(AddonFolder + name + ".vpk"))
-            {
-                has.vpk = true;
-            }
-
-            if (File.Exists(AddonFolder + "pak01_dir.vpk"))
+            if (File.Exists(AddonFolder + "pak01_dir.vpk") || 
+                File.Exists(AddonFolder + name + ".vpk") ||
+                info.VPKs.Length > 0)
             {
                 has.vpk = true;
             }
@@ -146,10 +143,10 @@ namespace P3AddonManager
                     filesTemp[index - 1] = entry;
                 }
 
-                if (File.Exists(AddonFolder + "pak01_dir.vpk"))
+                void CheckVPK(string path)
                 {
                     var archive = new VpkArchive();
-                    archive.Load(@AddonFolder + "pak01_dir.vpk");
+                    archive.Load(@path);
 
                     foreach (var directory in archive.Directories)
                         foreach (var entry in directory.Entries)
@@ -161,20 +158,29 @@ namespace P3AddonManager
                         vpkV2 = true;
                 }
 
+                if (File.Exists(AddonFolder + "pak01_dir.vpk"))
+                {
+                    CheckVPK(AddonFolder + "pak01_dir.vpk");
+                }
+
                 index = filesTemp.Length + 1;
                 if (File.Exists(AddonFolder + name + ".vpk"))
                 {
-                    var archive = new VpkArchive();
-                    archive.Load(@AddonFolder + name + ".vpk");
+                    CheckVPK(AddonFolder + name + ".vpk");
+                }
 
-                    foreach (var directory in archive.Directories)
-                        foreach (var entry in directory.Entries)
-                            AddToFileArray($"(VPK) {entry.ToString().Replace('/', '\\')}");
-
-                    if (archive.IsV1)
-                        vpkV1 = true;
-                    else if (archive.IsV2)
-                        vpkV2 = true;
+                if (info.VPKs.Length > 0)
+                {
+                    index = filesTemp.Length + 1;
+                    for (int i = 0; i < info.VPKs.Length; i++)
+                    {
+                        //Console.WriteLine(AddonFolder + info.VPKs[i] + ".vpk");
+                
+                        if (File.Exists(AddonFolder + info.VPKs[i] + ".vpk"))
+                        {
+                            CheckVPK(AddonFolder + info.VPKs[i] + ".vpk");
+                        }
+                    }
                 }
             }
 

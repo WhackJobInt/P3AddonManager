@@ -21,6 +21,8 @@ namespace P3AddonManager
             AngelScript = "null";
             Minimum = "null";
 
+            VPKs = new string[0];
+
             GameVersion = P3Hash.P3Version.Unknown;
         }
         public void CheckMinimum()
@@ -110,6 +112,8 @@ namespace P3AddonManager
         public string Postal3Script = new string("null");
         public string AngelScript = new string("null");
         public string Minimum = new string("null");
+
+        public string[] VPKs = new string[0];
 
         public P3Hash.P3Version GameVersion = P3Hash.P3Version.Unknown;
     }
