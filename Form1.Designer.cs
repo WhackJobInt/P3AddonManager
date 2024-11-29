@@ -617,7 +617,7 @@
         #endregion
 
         private GroupBox addonBox;
-        private CheckedListBox addonListBox;
+        public CheckedListBox addonListBox;
         private GroupBox selectedAddonGroupBox;
         private LinkLabel addonLinkLabel;
         private GroupBox groupBox2;

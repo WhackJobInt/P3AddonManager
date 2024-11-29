@@ -10,12 +10,22 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.Window;
+using System.Drawing.Imaging;
+using System.ComponentModel.Design.Serialization;
+using System.Runtime.Versioning;
 
 namespace P3AddonManager
 {
+    [SupportedOSPlatform("windows")]
     public partial class AddonEditorForm : Form
     {
         Form1 mainForm;
+
+        int AddonIndex = -1;
+
+        string tempFilePath = string.Empty;
+
+        Image tempImage = null;
 
         public AddonEditorForm(Form1 main)
         {
@@ -140,12 +150,13 @@ namespace P3AddonManager
             // 
             // imageButton
             // 
-            imageButton.Location = new Point(122, 282);
+            imageButton.Location = new Point(121, 275);
             imageButton.Name = "imageButton";
             imageButton.Size = new Size(103, 23);
             imageButton.TabIndex = 7;
-            imageButton.Text = "Load Image ..";
+            imageButton.Text = "Load Image ...";
             imageButton.UseVisualStyleBackColor = true;
+            imageButton.Click += imageButton_Click;
             // 
             // addonPictureBox
             // 
@@ -310,13 +321,14 @@ namespace P3AddonManager
             // 
             // AddonEditorForm
             // 
-            ClientSize = new Size(888, 668);
+            ClientSize = new Size(876, 656);
             ControlBox = false;
             Controls.Add(addonGroupBox);
             FormBorderStyle = FormBorderStyle.Fixed3D;
             Name = "AddonEditorForm";
             ShowIcon = false;
             Text = "Addon Editor";
+            FormClosed += AddonEditorForm_FormClosed;
             addonGroupBox.ResumeLayout(false);
             addonGroupBox.PerformLayout();
             groupBox2.ResumeLayout(false);
@@ -378,21 +390,25 @@ namespace P3AddonManager
             }
 
             saveButton.Enabled = false;
+
+            // Remember the index...
+            AddonIndex = mainForm.addonListBox.SelectedIndex;
         }
 
         private void minimumComboBox_SelectedIndexChanged(object sender, EventArgs e)
         {
-            // ZOOM doesn't have support for injecting Postal3Script... nor do they have AngelScript (+base UP)
-            // TODO: magic numbers begone
+            // ZOOM doesn't have support for injecting Postal3Script... nor do they have AngelScript
             if (minimumComboBox.SelectedIndex < P3Hash.AddonIndex(P3Hash.P3Version.Angelv1_1_0))
             {
-                p3sTextBox.ForeColor = Color.Red;
-                asTextBox.ForeColor = Color.Red;
+                p3sTextBox.BackColor = Color.Red;
+                asTextBox.BackColor = Color.Red;
+                vpksTextBox.BackColor = Color.Red;
             }
             else
             {
-                p3sTextBox.ForeColor = Color.Black;
-                asTextBox.ForeColor = Color.Black;
+                p3sTextBox.BackColor = Color.White;
+                asTextBox.BackColor = Color.White;
+                vpksTextBox.BackColor = Color.FromArgb(255, 240, 240, 240);
             }
 
             UpdateText();
@@ -488,6 +504,36 @@ namespace P3AddonManager
             editedAddon.info.Minimum = minimum;
             editedAddon.info.CheckMinimum();
 
+            if (tempFilePath != string.Empty && tempImage != null)
+            {
+                tempImage.Dispose();
+
+                string FilePath = tempFilePath.Replace("_temp", "");
+
+                //// Ensure previous images are fully disposed
+                if (addonPictureBox.Image != null)
+                {
+                    addonPictureBox.Image.Dispose();
+                    addonPictureBox.Image = null;
+                }
+
+                if (editedAddon.Image != null)
+                {
+                    editedAddon.Image.Dispose();
+                    editedAddon.Image = null;
+                }
+
+                File.Copy(tempFilePath, FilePath, true);
+
+                editedAddon.Image = new Bitmap($"{FilePath}");
+                addonPictureBox.Image = editedAddon.Image;
+
+                File.Delete(tempFilePath);
+
+                tempFilePath = string.Empty;
+                tempImage = null;
+            }
+
             mainForm.UpdateUI();
 
             mainForm.Reload(true);
@@ -573,7 +619,7 @@ namespace P3AddonManager
 
                 // wtf?
                 if (file.Length < 3)
-                   continue;
+                    continue;
 
                 string L = String.Format($"{file[file.Length - 1]}");
                 string L1 = String.Format($"{file[file.Length - 2]}");
@@ -605,6 +651,123 @@ namespace P3AddonManager
                 {
                     vpksTextBox.Text += ";";
                 }
+            }
+        }
+
+        static void FitImageToFourThree(string inputPath, string outputPath, int targetWidth, int targetHeight)
+        {
+            try
+            {
+                // Load the input image into a new Bitmap to avoid file locks
+                using var inputImage = new Bitmap(inputPath);
+
+                // Calculate new dimensions while preserving the aspect ratio
+                double originalAspectRatio = (double)inputImage.Width / inputImage.Height;
+                double targetAspectRatio = (double)targetWidth / targetHeight;
+
+                int newWidth, newHeight;
+
+                if (originalAspectRatio > targetAspectRatio) // Wider than 4:3
+                {
+                    newWidth = targetWidth;
+                    newHeight = (int)(targetWidth / originalAspectRatio);
+                }
+                else // Taller or equal aspect ratio
+                {
+                    newHeight = targetHeight;
+                    newWidth = (int)(targetHeight * originalAspectRatio);
+                }
+
+                // Create a new 4:3 canvas
+                using var canvas = new Bitmap(targetWidth, targetHeight);
+                using var graphics = Graphics.FromImage(canvas);
+
+                // Fill the canvas with a black background
+                graphics.Clear(Color.Black);
+
+                // Calculate centering positions
+                int xOffset = (targetWidth - newWidth) / 2;
+                int yOffset = (targetHeight - newHeight) / 2;
+
+                // Draw the resized image onto the canvas
+                graphics.DrawImage(inputImage, xOffset, yOffset, newWidth, newHeight);
+
+                // Save the fitted image as PNG
+                if (File.Exists(outputPath))
+                {
+                    File.Delete(outputPath);
+                }
+
+                using var tempCanvas = new Bitmap(canvas);
+                tempCanvas.Save(outputPath, ImageFormat.Png);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Failed to process the image.\n\n{ex.Message}", ex);
+            }
+        }
+
+        private void imageButton_Click(object sender, EventArgs e)
+        {
+            // Configure the OpenFileDialog
+            using var openFileDialog = new OpenFileDialog
+            {
+                Filter = "Image Files (*.png;*.jpg;*.jpeg;*.gif;*.bmp)|*.png;*.jpg;*.jpeg;*.gif;*.bmp",
+                Title = "Select an Image File"
+            };
+
+            // Show the dialog and check if the user selected a file
+            if (openFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                string selectedFilePath = openFileDialog.FileName;
+
+                try
+                {
+                    // Image currently displayed in main form will be problematic
+                    //int CurrIndex = mainForm.addonListBox.SelectedIndex;
+                    //
+                    //// Ensure previous images are fully disposed
+                    //if (addonPictureBox.Image != null)
+                    //{
+                    //    addonPictureBox.Image.Dispose();
+                    //    addonPictureBox.Image = null;
+                    //}
+                    //
+                    //if (editedAddon.Image != null)
+                    //{
+                    //    editedAddon.Image.Dispose();
+                    //    editedAddon.Image = null;
+                    //}
+
+                    string savePath = $"{Utils.GetAddonFolder()}{editedAddon.name}\\{editedAddon.name}_temp.png";
+
+                    tempFilePath = savePath;
+
+                    // Resize the image to fit into 4:3
+                    FitImageToFourThree(selectedFilePath, savePath, 640, 480);
+
+                    saveButton.Enabled = true;
+
+                    tempImage = new Bitmap($"{savePath}");
+                    addonPictureBox.Image = tempImage;
+
+                    //MessageBox.Show("Image has been added.\nSelect between addons to see the change in the main program.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"{ex.Message}\n\nTry reloading the Addon Editor", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        private void AddonEditorForm_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            if (tempFilePath != string.Empty && tempImage != null)
+            {
+                tempImage.Dispose();
+
+                if (File.Exists(tempFilePath))
+                    File.Delete(tempFilePath);
             }
         }
     }

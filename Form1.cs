@@ -3,6 +3,7 @@ using Gameloop.Vdf.Linq;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Timers;
@@ -15,6 +16,7 @@ using static System.Windows.Forms.VisualStyles.VisualStyleElement.Window;
 
 namespace P3AddonManager
 {
+    [SupportedOSPlatform("windows")]
     public partial class Form1 : Form
     {
         AddonEditorForm addonEditor;
@@ -390,21 +392,15 @@ namespace P3AddonManager
                 containsListBox.Items.Remove(containsListBox.Items[(int)AddonContains.vpk]);
                 containsListBox.Items.Insert((int)AddonContains.vpk, "VPK (V1)");
             }
-            else if (addon.vpkV2)
+
+            if (addon.vpkV2)
             {
                 containsListBox.Items.Remove(containsListBox.Items[(int)AddonContains.vpk]);
-                containsListBox.Items.Insert((int)AddonContains.vpk, "VPK (V2)");
 
-                string msg = "Postal III doesn't support VPK V2!";
-                string caption = "VPK V2 Detected";
-
-                MessageBox.Show(msg, caption, MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-
-            if (addon.vpkV1 && addon.vpkV2)
-            {
-                containsListBox.Items.Remove(containsListBox.Items[(int)AddonContains.vpk]);
-                containsListBox.Items.Insert((int)AddonContains.vpk, "VPK (V1+V2)");
+                if (!addon.vpkV1)
+                    containsListBox.Items.Insert((int)AddonContains.vpk, "VPK (V2)");
+                else
+                    containsListBox.Items.Insert((int)AddonContains.vpk, "VPK (V1+V2)");
 
                 string msg = "Postal III doesn't support VPK V2!";
                 string caption = "VPK V2 Detected";
